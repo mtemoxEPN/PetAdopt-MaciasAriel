@@ -1,0 +1,23 @@
+import { Message, Room } from '../entities/Message';
+
+export interface IChatRepository {
+    getRooms():                                   Promise<Room[]>;
+    createRoom(
+        name:                string,
+        userId:              string,
+        productName?:        string,
+        productDescription?: string,
+        productPrice?:       number,
+    ):                                            Promise<Room>;
+    getMessages(roomId: string):                  Promise<Message[]>;
+    sendMessage(
+        roomId:    string,
+        userId:    string,
+        content:   string,
+        imageUrl?: string,
+    ):                                            Promise<Message>;
+    subscribeToRoom(
+        roomId:    string,
+        onMessage: (msg: Message) => void,
+    ):                                            () => void;
+}
