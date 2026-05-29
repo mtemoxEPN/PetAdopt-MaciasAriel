@@ -1,32 +1,31 @@
+// metro.config.js
 const { getDefaultConfig } = require('expo/metro-config');
-const path = require('path');
 
 const config = getDefaultConfig(__dirname);
 
-config.resolver.alias = {
-  '@features': path.resolve(__dirname, 'src/features'),
-  '@shared': path.resolve(__dirname, 'src/shared'),
-};
-
 config.resolver.resolveRequest = (context, moduleName, platform) => {
-  const blocked = [
-    'stream', 'crypto', 'http', 'https', 'net', 'tls', 'fs',
-    'path', 'os', 'zlib', 'events', 'util', 'buffer', 'url',
-    'querystring', '@opentelemetry/api', '@opentelemetry/core',
-    '@opentelemetry/context-async-hooks', '@opentelemetry/sdk-trace-base',
-  ];
-  if (blocked.includes(moduleName)) {
+  const nodeModules = ['stream', 'crypto', 'http', 'https', 'net', 'tls', 'fs', 'path', 'os', 'zlib'];
+  if (nodeModules.includes(moduleName)) {
     return { type: 'empty' };
   }
   return context.resolveRequest(context, moduleName, platform);
 };
 
-// Esto es lo que faltaba — transformar el dynamic import a algo que Hermes entiende
+// Banear el import dinámico con variable que rompe Hermes
 config.transformer = {
   ...config.transformer,
-  unstable_allowRequireContext: true,
+  minifierConfig: {
+    keep_classnames: true,
+    keep_fnames: true,
+    mangle: {
+      keep_classnames: true,
+      keep_fnames: true,
+    },
+  },
 };
 
-config.resolver.unstable_enablePackageExports = true;
+config.resolver.blockList = [
+  /node_modules\/@supabase\/realtime-js\/dist\/main\/lib\/util\.js/,
+];
 
 module.exports = config;
