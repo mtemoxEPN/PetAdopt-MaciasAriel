@@ -2,7 +2,7 @@ import { AiMessage } from '@features/ai/domain/entities/AiMessage';
 import { IAiRepository } from '@features/ai/domain/repositories/IAiRepository';
 
 const GEMINI_API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY!;
-const GEMINI_URL     = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+const GEMINI_URL     = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 
 const SYSTEM_PROMPT = `Eres un asistente virtual especializado en salud y cuidado de mascotas para la app PetAdopt.
 Tu rol es ayudar a adoptantes y refugios con:

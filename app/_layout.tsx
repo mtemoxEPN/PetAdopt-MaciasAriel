@@ -1,13 +1,14 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Slot, useRouter, useSegments } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { supabase } from '@shared/infrastructure/supabase/client';
-import { useAuthStore } from '@features/auth/presentation/store/authStore';
-import { SupabaseAuthRepository } from '@features/auth/infrastructure/repositories/SupabaseAuthRepository';
-import { requestNotificationPermissions } from '@shared/infrastructure/notifications/NotificationService';
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Slot, useRouter, useSegments } from "expo-router";
+import { useEffect, useState } from "react";
+import { supabase } from "@shared/infrastructure/supabase/client";
+import { useAuthStore } from "@features/auth/presentation/store/authStore";
+import { SupabaseAuthRepository } from "@features/auth/infrastructure/repositories/SupabaseAuthRepository";
+import { requestNotificationPermissions } from "@shared/infrastructure/notifications/NotificationService";
+import SplashScreen from "./splash";
 
 const queryClient = new QueryClient({
-  defaultOptions: { queries: { retry: 1, staleTime: 30_000 } }
+  defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
 });
 const authRepo = new SupabaseAuthRepository();
 
@@ -15,7 +16,8 @@ function AuthGuard() {
   const { user, setUser } = useAuthStore();
   const segments = useSegments();
   const router = useRouter();
-  const [isReady, setIsReady] = useState(false); // 👈 clave del fix
+  const [isReady, setIsReady] = useState(false);
+  const [showSplash, setShowSplash] = useState(true);
 
   useEffect(() => {
     async function restoreSession() {
@@ -23,33 +25,38 @@ function AuthGuard() {
       setUser(user);
       setIsReady(true);
     }
-    restoreSession(); // ✅ función async interna, no async directo en useEffect
+    restoreSession();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        async function syncUser() {
-          if (session) {
-            const user = await authRepo.getCurrentUser();
-            setUser(user);
-          } else {
-            setUser(null);
-          }
-          setIsReady(true); // 👈 movido aquí: cubre ambos casos (con y sin sesión)
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      async function syncUser() {
+        if (session) {
+          const user = await authRepo.getCurrentUser();
+          setUser(user);
+        } else {
+          setUser(null);
         }
-        syncUser();
+        setIsReady(true);
       }
-    );
-    requestNotificationPermissions(); 
-    return () => subscription.unsubscribe(); // ✅ cleanup síncrono
+      syncUser();
+    });
+
+    requestNotificationPermissions();
+    return () => subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
-    if (!isReady) return; // 👈 no navegar hasta estar montado
+    if (!isReady || showSplash) return;
 
-    const inAuth = segments[0] === '(auth)';
-    if (!user && !inAuth) router.replace('/(auth)/login');
-    if (user && inAuth) router.replace('/(app)');
-  }, [user, segments, isReady]);
+    const inAuth = segments[0] === "(auth)";
+    if (!user && !inAuth) router.replace("/(auth)/login");
+    if (user && inAuth) router.replace("/(app)");
+  }, [user, segments, isReady, showSplash]);
+
+  if (showSplash) {
+    return <SplashScreen onFinish={() => setShowSplash(false)} />;
+  }
 
   return <Slot />;
 }

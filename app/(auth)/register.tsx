@@ -1,6 +1,17 @@
-import { useAuth } from '@features/auth/presentation/hooks/useAuth';
-import { Link } from 'expo-router';
-import { useState } from 'react';
+import { useAuth } from "@features/auth/presentation/hooks/useAuth";
+import { ThemedButton } from "@shared/presentation/components/ThemedButton";
+import { ThemedInput } from "@shared/presentation/components/ThemedInput";
+import {
+  colors,
+  spacing,
+  typography,
+  shadows,
+  radius,
+  validators,
+  validationMessages,
+} from "@shared/presentation/styles/theme";
+import { Link, useRouter } from "expo-router";
+import { useState, useCallback } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -8,37 +19,92 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
-} from 'react-native';
+  Modal,
+} from "react-native";
+import Animated, { FadeInUp } from "react-native-reanimated";
+import { WebView } from "react-native-webview";
 
 export default function RegisterScreen() {
-  const [emailSent, setEmailSent]   = useState(false);
-  const [email, setEmail]           = useState('');
-  const [password, setPassword]     = useState('');
-  const [username, setUsername]     = useState('');
-  const [fullName, setFullName]     = useState('');
-  const [role, setRole]             = useState<'adoptante' | 'refugio'>('adoptante');
-  const [focused, setFocused]       = useState<string | null>(null);
+  const [emailSent, setEmailSent] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [username, setUsername] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [role, setRole] = useState<"adoptante" | "refugio">("adoptante");
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const [address, setAddress] = useState("");
+  const [lat, setLat] = useState<number | undefined>(undefined);
+  const [lng, setLng] = useState<number | undefined>(undefined);
+  const [showMap, setShowMap] = useState(false);
+  const [isFetchingAddress, setIsFetchingAddress] = useState(false);
+
   const { register, isLoading, error } = useAuth();
+
+  const validate = useCallback(() => {
+    const newErrors: Record<string, string> = {};
+    if (!validators.required(fullName)) newErrors.fullName = validationMessages.required;
+    if (!validators.required(username)) newErrors.username = validationMessages.required;
+    else if (!validators.username(username)) newErrors.username = validationMessages.username;
+    if (!validators.required(email)) newErrors.email = validationMessages.required;
+    else if (!validators.email(email)) newErrors.email = validationMessages.email;
+    if (!validators.required(password)) newErrors.password = validationMessages.required;
+    else if (!validators.password(password)) newErrors.password = validationMessages.password;
+    if (role === "refugio" && !lat) newErrors.location = "Selecciona la ubicación del refugio";
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  }, [fullName, username, email, password, role, lat]);
+
+  const handleRegister = useCallback(() => {
+    if (validate()) {
+      register(
+        { email, password, username, role, fullName, lat, lng, address },
+        { onSuccess: () => setEmailSent(true) }
+      );
+    }
+  }, [validate, register, email, password, username, role, fullName, lat, lng, address]);
+
+  const mapPickerHtml = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+      <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+      <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+      <style>body, html { margin: 0; padding: 0; height: 100%; width: 100%; }</style>
+    </head>
+    <body>
+      <div id="map" style="height: 100vh; width: 100vw;"></div>
+      <script>
+        const map = L.map('map', { zoomControl: false }).setView([-0.1807, -78.4678], 12);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        let currentMarker;
+        map.on('click', function(e) {
+          if (currentMarker) map.removeLayer(currentMarker);
+          currentMarker = L.marker(e.latlng).addTo(map);
+          window.ReactNativeWebView.postMessage(JSON.stringify({ lat: e.latlng.lat, lng: e.latlng.lng }));
+        });
+      </script>
+    </body>
+    </html>
+  `;
 
   if (emailSent) {
     return (
       <View style={styles.root}>
-        <View style={styles.successContainer}>
+        <Animated.View entering={FadeInUp.duration(600)} style={styles.successContainer}>
           <Text style={styles.successIcon}>✉️</Text>
           <Text style={styles.successTitle}>¡Revisa tu correo!</Text>
           <Text style={styles.successText}>
-            Enviamos un enlace de verificación a{'\n'}
+            Enviamos un enlace de verificación a{"\n"}
             <Text style={styles.successEmail}>{email}</Text>
           </Text>
           <Link href="/(auth)/login" asChild>
-            <TouchableOpacity style={styles.btnPrimary}>
-              <Text style={styles.btnPrimaryText}>Ir al Login</Text>
-            </TouchableOpacity>
+            <ThemedButton variant="primary">Ir al Login</ThemedButton>
           </Link>
-        </View>
+        </Animated.View>
       </View>
     );
   }
@@ -46,40 +112,58 @@ export default function RegisterScreen() {
   return (
     <KeyboardAvoidingView
       style={styles.root}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-
-        <View style={styles.header}>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <Animated.View entering={FadeInUp.duration(600).delay(100)} style={styles.header}>
           <Text style={styles.logo}>🐾</Text>
           <Text style={styles.brand}>PetAdopt</Text>
           <Text style={styles.tagline}>Únete y ayuda a los animales</Text>
-        </View>
+        </Animated.View>
 
-        <View style={styles.card}>
+        <Animated.View entering={FadeInUp.duration(600).delay(250)} style={styles.card}>
           <Text style={styles.titleLight}>Crear</Text>
           <Text style={styles.titleBold}>cuenta.</Text>
 
-          {/* Selector de rol */}
           <Text style={styles.sectionLabel}>SOY UN</Text>
           <View style={styles.roleRow}>
             <TouchableOpacity
-              style={[styles.roleBtn, role === 'adoptante' && styles.roleBtnActive]}
-              onPress={() => setRole('adoptante')}
-              activeOpacity={0.8}
+              style={[
+                styles.roleBtn,
+                role === "adoptante" && styles.roleBtnActive,
+              ]}
+              onPress={() => setRole("adoptante")}
             >
               <Text style={styles.roleIcon}>🏠</Text>
-              <Text style={[styles.roleLabel, role === 'adoptante' && styles.roleLabelActive]}>Adoptante</Text>
-              <Text style={styles.roleDesc}>Busco una mascota</Text>
+              <Text
+                style={[
+                  styles.roleLabel,
+                  role === "adoptante" && styles.roleLabelActive,
+                ]}
+              >
+                Adoptante
+              </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.roleBtn, role === 'refugio' && styles.roleBtnActive]}
-              onPress={() => setRole('refugio')}
-              activeOpacity={0.8}
+              style={[
+                styles.roleBtn,
+                role === "refugio" && styles.roleBtnActive,
+              ]}
+              onPress={() => setRole("refugio")}
             >
               <Text style={styles.roleIcon}>🏥</Text>
-              <Text style={[styles.roleLabel, role === 'refugio' && styles.roleLabelActive]}>Refugio</Text>
-              <Text style={styles.roleDesc}>Doy mascotas en adopción</Text>
+              <Text
+                style={[
+                  styles.roleLabel,
+                  role === "refugio" && styles.roleLabelActive,
+                ]}
+              >
+                Refugio
+              </Text>
             </TouchableOpacity>
           </View>
 
@@ -90,158 +174,349 @@ export default function RegisterScreen() {
           )}
 
           <View style={styles.form}>
-            <View style={styles.fieldGroup}>
-              <Text style={styles.label}>
-                {role === 'refugio' ? 'NOMBRE DEL REFUGIO' : 'NOMBRE COMPLETO'}
-              </Text>
-              <TextInput
-                style={[styles.input, focused === 'fullName' && styles.inputFocused]}
-                placeholder={role === 'refugio' ? 'Refugio Esperanza' : 'Tu nombre'}
-                placeholderTextColor="#9ca3af"
-                value={fullName}
-                onChangeText={setFullName}
-                onFocus={() => setFocused('fullName')}
-                onBlur={() => setFocused(null)}
-              />
-            </View>
+            <ThemedInput
+              label={role === "refugio" ? "Nombre del refugio" : "Nombre completo"}
+              placeholder={role === "refugio" ? "Refugio Esperanza" : "Tu nombre"}
+              value={fullName}
+              onChangeText={(text: string) => {
+                setFullName(text);
+                if (errors.fullName) setErrors((prev) => ({ ...prev, fullName: "" }));
+              }}
+              error={errors.fullName}
+              required
+            />
 
-            <View style={styles.fieldGroup}>
-              <Text style={styles.label}>USUARIO</Text>
-              <TextInput
-                style={[styles.input, focused === 'username' && styles.inputFocused]}
-                placeholder="sin espacios"
-                placeholderTextColor="#9ca3af"
-                value={username}
-                onChangeText={setUsername}
-                autoCapitalize="none"
-                onFocus={() => setFocused('username')}
-                onBlur={() => setFocused(null)}
-              />
-            </View>
+            <ThemedInput
+              label="Usuario"
+              placeholder="sin espacios"
+              value={username}
+              onChangeText={(text: string) => {
+                setUsername(text);
+                if (errors.username) setErrors((prev) => ({ ...prev, username: "" }));
+              }}
+              autoCapitalize="none"
+              error={errors.username}
+              required
+            />
 
-            <View style={styles.fieldGroup}>
-              <Text style={styles.label}>CORREO</Text>
-              <TextInput
-                style={[styles.input, focused === 'email' && styles.inputFocused]}
-                placeholder="tu@correo.com"
-                placeholderTextColor="#9ca3af"
-                value={email}
-                onChangeText={setEmail}
-                autoCapitalize="none"
-                keyboardType="email-address"
-                onFocus={() => setFocused('email')}
-                onBlur={() => setFocused(null)}
-              />
-            </View>
+            <ThemedInput
+              label="Correo electrónico"
+              placeholder="tu@correo.com"
+              value={email}
+              onChangeText={(text: string) => {
+                setEmail(text);
+                if (errors.email) setErrors((prev) => ({ ...prev, email: "" }));
+              }}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              error={errors.email}
+              required
+            />
 
-            <View style={styles.fieldGroup}>
-              <Text style={styles.label}>CONTRASEÑA</Text>
-              <TextInput
-                style={[styles.input, focused === 'password' && styles.inputFocused]}
-                placeholder="mín. 6 caracteres"
-                placeholderTextColor="#9ca3af"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-                onFocus={() => setFocused('password')}
-                onBlur={() => setFocused(null)}
-              />
-            </View>
+            <ThemedInput
+              label="Contraseña"
+              placeholder="Mín. 8 caracteres"
+              value={password}
+              onChangeText={(text: string) => {
+                setPassword(text);
+                if (errors.password) setErrors((prev) => ({ ...prev, password: "" }));
+              }}
+              secureTextEntry
+              error={errors.password}
+              required
+            />
 
-            <TouchableOpacity
-              style={[styles.btnPrimary, isLoading && styles.btnDisabled]}
-              onPress={() =>
-                register(
-                  { email, password, username, role, fullName },
-                  { onSuccess: () => setEmailSent(true) }
-                )
-              }
-              disabled={isLoading}
-              activeOpacity={0.85}
+            {role === "refugio" && (
+              <>
+                <ThemedInput
+                  label="Dirección del refugio"
+                  placeholder="Ej: Av. Principal 123"
+                  value={address}
+                  onChangeText={setAddress}
+                />
+                <View>
+                  <Text style={styles.mapLabel}>UBICACIÓN EN EL MAPA</Text>
+                  <TouchableOpacity
+                    style={[
+                      styles.mapBtn,
+                      errors.location && styles.mapBtnError,
+                    ]}
+                    onPress={() => setShowMap(true)}
+                  >
+                    <Text style={styles.mapBtnText}>
+                      {lat && lng
+                        ? "📍 Ubicación seleccionada"
+                        : "🗺️ Toca para elegir en el mapa"}
+                    </Text>
+                  </TouchableOpacity>
+                  {errors.location && (
+                    <Text style={styles.mapError}>{errors.location}</Text>
+                  )}
+                </View>
+              </>
+            )}
+
+            <ThemedButton
+              variant="primary"
+              size="lg"
+              onPress={handleRegister}
+              isLoading={isLoading}
             >
-              {isLoading
-                ? <ActivityIndicator color="#fff" />
-                : <Text style={styles.btnPrimaryText}>Crear Cuenta</Text>
-              }
-            </TouchableOpacity>
+              Crear Cuenta
+            </ThemedButton>
 
             <Link href="/(auth)/login" asChild>
-              <TouchableOpacity style={styles.btnSecondary} activeOpacity={0.7}>
-                <Text style={styles.btnSecondaryText}>Ya tengo cuenta</Text>
+              <TouchableOpacity style={styles.loginLink} activeOpacity={0.7}>
+                <Text style={styles.loginText}>
+                  ¿Ya tienes cuenta?{" "}
+                  <Text style={styles.loginHighlight}>Inicia sesión</Text>
+                </Text>
               </TouchableOpacity>
             </Link>
           </View>
-        </View>
-
-        <Text style={styles.footer}>Cada mascota merece un hogar 🏠</Text>
+        </Animated.View>
       </ScrollView>
+
+      {/* Modal del Mapa */}
+      <Modal visible={showMap} animationType="slide" transparent>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeaderMap}>
+            <View>
+              <Text style={styles.modalTitle}>
+                Toca el mapa para fijar tu refugio
+              </Text>
+              {isFetchingAddress && (
+                <Text style={{ fontSize: 12, color: colors.primary }}>
+                  📍 Buscando dirección...
+                </Text>
+              )}
+            </View>
+            <TouchableOpacity
+              onPress={() => {
+                setShowMap(false);
+                if (errors.location)
+                  setErrors((prev) => ({ ...prev, location: "" }));
+              }}
+              style={styles.modalCloseBtn}
+              disabled={!lat || !lng}
+            >
+              <Text
+                style={[
+                  styles.modalCloseText,
+                  (!lat || !lng) && { opacity: 0.4 },
+                ]}
+              >
+                Confirmar
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <WebView
+            originWhitelist={["*"]}
+            source={{ html: mapPickerHtml }}
+            style={{ flex: 1 }}
+            onMessage={async (event) => {
+              const data = JSON.parse(event.nativeEvent.data);
+              setLat(data.lat);
+              setLng(data.lng);
+
+              try {
+                setIsFetchingAddress(true);
+                const response = await fetch(
+                  `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${data.lat}&lon=${data.lng}`,
+                  { headers: { "User-Agent": "PetAdoptApp/1.0" } }
+                );
+                const result = await response.json() as { display_name?: string };
+
+                if (result?.display_name) {
+                  const partes = result.display_name
+                    .split(",")
+                    .slice(0, 3)
+                    .join(", ");
+                  setAddress(partes);
+                }
+              } catch (error) {
+                console.error("Error obteniendo la dirección:", error);
+              } finally {
+                setIsFetchingAddress(false);
+              }
+            }}
+          />
+        </View>
+      </Modal>
     </KeyboardAvoidingView>
   );
 }
 
-const PRIMARY = '#f97316';
-const DARK    = '#1c1917';
-
 const styles = StyleSheet.create({
-  root:   { flex: 1, backgroundColor: '#fef7f0' },
-  scroll: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: 24, paddingVertical: 48 },
-
-  header:  { alignItems: 'center', marginBottom: 32 },
-  logo:    { fontSize: 56, marginBottom: 8 },
-  brand:   { fontSize: 32, fontWeight: '700', color: DARK, letterSpacing: -1 },
-  tagline: { fontSize: 14, color: '#78716c', marginTop: 4 },
-
-  successContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32, gap: 16 },
-  successIcon:      { fontSize: 64 },
-  successTitle:     { fontSize: 28, fontWeight: '700', color: DARK },
-  successText:      { fontSize: 15, color: '#78716c', textAlign: 'center', lineHeight: 24 },
-  successEmail:     { color: PRIMARY, fontWeight: '600' },
-
+  root: { flex: 1, backgroundColor: colors.background },
+  scroll: {
+    flexGrow: 1,
+    justifyContent: "center",
+    paddingHorizontal: spacing["2xl"],
+    paddingVertical: spacing["4xl"],
+  },
+  header: { alignItems: "center", marginBottom: spacing["2xl"] },
+  logo: { fontSize: 56, marginBottom: 8 },
+  brand: {
+    fontFamily: typography.fontFamily.serif,
+    fontSize: typography.size.h1,
+    fontWeight: typography.weight.bold,
+    color: colors.textPrimary,
+    letterSpacing: typography.letterSpacing.tight,
+  },
+  tagline: {
+    fontFamily: typography.fontFamily.body,
+    fontSize: typography.size.bodySmall,
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
+  },
   card: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     borderRadius: 24,
-    padding: 28,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    elevation: 4,
+    padding: spacing["2xl"],
+    ...shadows.lg,
   },
-
-  titleLight: { fontSize: 32, fontWeight: '300', color: '#a8a29e', letterSpacing: -1 },
-  titleBold:  { fontSize: 32, fontWeight: '700', color: DARK, letterSpacing: -1, marginTop: -4, marginBottom: 20 },
-
-  sectionLabel: { fontSize: 10, fontWeight: '700', color: '#78716c', letterSpacing: 2, marginBottom: 10 },
-  roleRow:      { flexDirection: 'row', gap: 12, marginBottom: 20 },
+  titleLight: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: typography.size.h1,
+    fontWeight: typography.weight.light,
+    color: colors.textTertiary,
+    letterSpacing: typography.letterSpacing.tight,
+  },
+  titleBold: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: typography.size.h1,
+    fontWeight: typography.weight.bold,
+    color: colors.textPrimary,
+    letterSpacing: typography.letterSpacing.tight,
+    marginTop: -4,
+    marginBottom: spacing.lg,
+  },
+  sectionLabel: {
+    fontSize: typography.size.overline,
+    fontWeight: typography.weight.bold,
+    color: colors.textSecondary,
+    letterSpacing: typography.letterSpacing.wider,
+    textTransform: "uppercase",
+    marginBottom: spacing.sm,
+  },
+  roleRow: { flexDirection: "row", gap: spacing.md, marginBottom: spacing.md },
   roleBtn: {
-    flex: 1, borderRadius: 16, padding: 16,
-    alignItems: 'center', borderWidth: 1.5,
-    borderColor: '#e7e5e4', backgroundColor: '#fafaf9',
+    flex: 1,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    alignItems: "center",
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    backgroundColor: colors.gray100,
   },
-  roleBtnActive:  { borderColor: PRIMARY, backgroundColor: '#fff7ed' },
-  roleIcon:       { fontSize: 28, marginBottom: 6 },
-  roleLabel:      { fontSize: 13, fontWeight: '600', color: '#a8a29e' },
-  roleLabelActive: { color: PRIMARY },
-  roleDesc:       { fontSize: 11, color: '#a8a29e', marginTop: 2, textAlign: 'center' },
-
-  errorBox:  { backgroundColor: '#fef2f2', borderRadius: 12, padding: 12, marginBottom: 16, borderLeftWidth: 3, borderLeftColor: '#ef4444' },
-  errorText: { color: '#dc2626', fontSize: 13 },
-
-  form:       { gap: 14 },
-  fieldGroup: { gap: 6 },
-  label:      { fontSize: 10, fontWeight: '700', color: '#78716c', letterSpacing: 2 },
-  input: {
-    borderWidth: 1.5, borderColor: '#e7e5e4', borderRadius: 14,
-    paddingHorizontal: 16, paddingVertical: 14,
-    fontSize: 15, color: DARK, backgroundColor: '#fafaf9',
+  roleBtnActive: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryLight,
   },
-  inputFocused: { borderColor: PRIMARY, backgroundColor: '#fff7ed' },
+  roleIcon: { fontSize: 28, marginBottom: 4 },
+  roleLabel: {
+    fontSize: typography.size.bodySmall,
+    fontWeight: typography.weight.semibold,
+    color: colors.textTertiary,
+  },
+  roleLabelActive: { color: colors.primary },
 
-  btnPrimary:     { backgroundColor: PRIMARY, borderRadius: 100, paddingVertical: 16, alignItems: 'center', marginTop: 4 },
-  btnDisabled:    { opacity: 0.6 },
-  btnPrimaryText: { color: '#fff', fontWeight: '700', fontSize: 15 },
-  btnSecondary:     { borderRadius: 100, paddingVertical: 14, alignItems: 'center', backgroundColor: '#fef3c7', borderWidth: 1.5, borderColor: '#fde68a' },
-  btnSecondaryText: { color: '#92400e', fontWeight: '600', fontSize: 14 },
+  errorBox: {
+    backgroundColor: colors.errorLight,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.error,
+  },
+  errorText: { color: colors.error, fontSize: typography.size.caption },
 
-  footer: { textAlign: 'center', marginTop: 32, fontSize: 13, color: '#a8a29e' },
+  form: { gap: spacing.md },
+
+  mapLabel: {
+    fontSize: typography.size.overline,
+    fontWeight: typography.weight.bold,
+    color: colors.textSecondary,
+    letterSpacing: typography.letterSpacing.wider,
+    textTransform: "uppercase",
+    marginLeft: spacing.xs,
+    marginBottom: spacing.xs,
+  },
+  mapBtn: {
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    borderRadius: radius.lg,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    backgroundColor: colors.surface,
+    alignItems: "center",
+    borderStyle: "dashed",
+  },
+  mapBtnError: { borderColor: colors.error, backgroundColor: colors.errorLight },
+  mapBtnText: { color: colors.primary, fontWeight: typography.weight.semibold },
+  mapError: {
+    color: colors.error,
+    fontSize: typography.size.caption,
+    marginLeft: spacing.xs,
+    marginTop: 2,
+  },
+
+  loginLink: { alignItems: "center", paddingVertical: spacing.sm },
+  loginText: { color: colors.textSecondary, fontSize: typography.size.bodySmall },
+  loginHighlight: { color: colors.primary, fontWeight: typography.weight.semibold },
+
+  modalContainer: {
+    flex: 1,
+    backgroundColor: colors.white,
+    marginTop: 50,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    overflow: "hidden",
+    ...shadows.xl,
+  },
+  modalHeaderMap: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: spacing.lg,
+    backgroundColor: colors.white,
+    borderBottomWidth: 1,
+    borderColor: colors.border,
+  },
+  modalTitle: {
+    fontSize: typography.size.bodySmall,
+    fontWeight: typography.weight.semibold,
+    color: colors.textPrimary,
+  },
+  modalCloseBtn: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.full,
+  },
+  modalCloseText: { color: colors.white, fontWeight: typography.weight.bold },
+
+  successContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: spacing["3xl"],
+    gap: spacing.md,
+    backgroundColor: colors.background,
+  },
+  successIcon: { fontSize: 64 },
+  successTitle: {
+    fontSize: typography.size.h2,
+    fontWeight: typography.weight.bold,
+    color: colors.textPrimary,
+  },
+  successText: {
+    fontSize: typography.size.body,
+    color: colors.textSecondary,
+    textAlign: "center",
+    lineHeight: 24,
+  },
+  successEmail: { color: colors.primary, fontWeight: typography.weight.semibold },
 });

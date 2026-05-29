@@ -1,46 +1,69 @@
-import { useAuth } from '@features/auth/presentation/hooks/useAuth';
-import { Link } from 'expo-router';
-import { useState } from 'react';
+import { useAuth } from "@features/auth/presentation/hooks/useAuth";
+import { ThemedButton } from "@shared/presentation/components/ThemedButton";
+import { ThemedInput } from "@shared/presentation/components/ThemedInput";
+import { colors, spacing, typography, shadows, radius, validators, validationMessages } from "@shared/presentation/styles/theme";
+import { Link, useRouter } from "expo-router";
+import { useState, useCallback } from "react";
 import {
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
-} from 'react-native';
-import LottieView from 'lottie-react-native';
+} from "react-native";
+import Animated, {
+  FadeInUp,
+  FadeIn,
+} from "react-native-reanimated";
+import LottieView from "lottie-react-native";
 
 export default function LoginScreen() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [focused, setFocused] = useState<string | null>(null);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const { login, loginWithGoogle, isLoading, error } = useAuth();
+  const router = useRouter();
+
+  const validate = useCallback(() => {
+    const newErrors: Record<string, string> = {};
+    if (!validators.required(email)) newErrors.email = validationMessages.required;
+    else if (!validators.email(email)) newErrors.email = validationMessages.email;
+    if (!validators.required(password)) newErrors.password = validationMessages.required;
+    else if (!validators.password(password)) newErrors.password = validationMessages.password;
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  }, [email, password]);
+
+  const handleLogin = useCallback(() => {
+    if (validate()) login({ email, password });
+  }, [validate, login, email, password]);
 
   return (
     <KeyboardAvoidingView
       style={styles.root}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
         {/* Header */}
-        <View style={styles.header}>
+        <Animated.View entering={FadeInUp.duration(600).delay(100)} style={styles.header}>
           <LottieView
-            source={require('../../assets/animations/pet-walk.json')}
+            source={require("../../assets/animations/pet-walk.json")}
             autoPlay
             loop
             style={{ width: 120, height: 120 }}
           />
           <Text style={styles.brand}>PetAdopt</Text>
           <Text style={styles.tagline}>Encuentra a tu compañero ideal</Text>
-        </View>
+        </Animated.View>
 
         {/* Card */}
-        <View style={styles.card}>
+        <Animated.View entering={FadeInUp.duration(600).delay(250)} style={styles.card}>
           <Text style={styles.titleLight}>Bienvenido</Text>
           <Text style={styles.titleBold}>de vuelta.</Text>
 
@@ -51,52 +74,46 @@ export default function LoginScreen() {
           )}
 
           <View style={styles.form}>
-            <View style={styles.fieldGroup}>
-              <Text style={styles.label}>CORREO</Text>
-              <TextInput
-                style={[styles.input, focused === 'email' && styles.inputFocused]}
-                placeholder="tu@correo.com"
-                placeholderTextColor="#9ca3af"
-                value={email}
-                onChangeText={setEmail}
-                autoCapitalize="none"
-                keyboardType="email-address"
-                onFocus={() => setFocused('email')}
-                onBlur={() => setFocused(null)}
-              />
-            </View>
+            <ThemedInput
+              label="Correo electrónico"
+              placeholder="tu@correo.com"
+              value={email}
+              onChangeText={(text) => {
+                setEmail(text);
+                if (errors.email) setErrors((prev) => ({ ...prev, email: "" }));
+              }}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              error={errors.email}
+            />
 
-            <View style={styles.fieldGroup}>
-              <Text style={styles.label}>CONTRASEÑA</Text>
-              <TextInput
-                style={[styles.input, focused === 'password' && styles.inputFocused]}
-                placeholder="••••••••"
-                placeholderTextColor="#9ca3af"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-                onFocus={() => setFocused('password')}
-                onBlur={() => setFocused(null)}
-              />
-            </View>
-
-            <Link href="/(auth)/forgot-password" asChild>
-              <TouchableOpacity>
-                <Text style={styles.forgotText}>¿Olvidaste tu contraseña?</Text>
-              </TouchableOpacity>
-            </Link>
+            <ThemedInput
+              label="Contraseña"
+              placeholder="••••••••"
+              value={password}
+              onChangeText={(text) => {
+                setPassword(text);
+                if (errors.password) setErrors((prev) => ({ ...prev, password: "" }));
+              }}
+              secureTextEntry
+              error={errors.password}
+            />
 
             <TouchableOpacity
-              style={[styles.btnPrimary, isLoading && styles.btnDisabled]}
-              onPress={() => login({ email, password })}
-              disabled={isLoading}
-              activeOpacity={0.85}
+              onPress={() => router.push("/(auth)/forgot-password")}
+              activeOpacity={0.7}
             >
-              {isLoading
-                ? <ActivityIndicator color="#fff" />
-                : <Text style={styles.btnPrimaryText}>Iniciar Sesión</Text>
-              }
+              <Text style={styles.forgotText}>¿Olvidaste tu contraseña?</Text>
             </TouchableOpacity>
+
+            <ThemedButton
+              variant="primary"
+              size="lg"
+              onPress={handleLogin}
+              isLoading={isLoading}
+            >
+              Iniciar Sesión
+            </ThemedButton>
 
             {/* Divider */}
             <View style={styles.divider}>
@@ -105,88 +122,112 @@ export default function LoginScreen() {
               <View style={styles.dividerLine} />
             </View>
 
-            {/* Google */}
-            <TouchableOpacity
-              style={styles.btnGoogle}
+            <ThemedButton
+              variant="outline"
+              size="md"
               onPress={loginWithGoogle}
-              activeOpacity={0.85}
             >
-              <Text style={styles.btnGoogleText}>🌐  Continuar con Google</Text>
-            </TouchableOpacity>
+              🌐 Continuar con Google
+            </ThemedButton>
 
             <Link href="/(auth)/register" asChild>
-              <TouchableOpacity style={styles.btnSecondary} activeOpacity={0.7}>
-                <Text style={styles.btnSecondaryText}>Crear una cuenta</Text>
+              <TouchableOpacity style={styles.registerLink} activeOpacity={0.7}>
+                <Text style={styles.registerText}>
+                  ¿No tienes cuenta?{" "}
+                  <Text style={styles.registerHighlight}>Crear una</Text>
+                </Text>
               </TouchableOpacity>
             </Link>
           </View>
-        </View>
+        </Animated.View>
 
-        <Text style={styles.footer}>Cada mascota merece un hogar 🏠</Text>
+        <Animated.Text entering={FadeIn.duration(800).delay(500)} style={styles.footer}>
+          Cada mascota merece un hogar 🏠
+        </Animated.Text>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
-const PRIMARY = '#f97316';
-const DARK = '#1c1917';
-
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#fef7f0' },
-  scroll: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: 24, paddingVertical: 48 },
+  root: { flex: 1, backgroundColor: colors.background },
+  scroll: {
+    flexGrow: 1,
+    justifyContent: "center",
+    paddingHorizontal: spacing["2xl"],
+    paddingVertical: spacing["5xl"],
+  },
 
-  header: { alignItems: 'center', marginBottom: 32 },
-  logo: { fontSize: 56, marginBottom: 8 },
-  brand: { fontSize: 32, fontWeight: '700', color: DARK, letterSpacing: -1 },
-  tagline: { fontSize: 14, color: '#78716c', marginTop: 4 },
+  header: { alignItems: "center", marginBottom: spacing["2xl"] },
+  brand: {
+    fontFamily: typography.fontFamily.serif,
+    fontSize: typography.size.h1,
+    fontWeight: typography.weight.bold,
+    color: colors.textPrimary,
+    letterSpacing: typography.letterSpacing.tight,
+  },
+  tagline: {
+    fontFamily: typography.fontFamily.body,
+    fontSize: typography.size.bodySmall,
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
+  },
 
   card: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     borderRadius: 24,
-    padding: 28,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    elevation: 4,
+    padding: spacing["2xl"],
+    ...shadows.lg,
   },
 
-  titleLight: { fontSize: 32, fontWeight: '300', color: '#a8a29e', letterSpacing: -1 },
-  titleBold: { fontSize: 32, fontWeight: '700', color: DARK, letterSpacing: -1, marginTop: -4, marginBottom: 20 },
-
-  errorBox: { backgroundColor: '#fef2f2', borderRadius: 12, padding: 12, marginBottom: 16, borderLeftWidth: 3, borderLeftColor: '#ef4444' },
-  errorText: { color: '#dc2626', fontSize: 13 },
-
-  form: { gap: 14 },
-  fieldGroup: { gap: 6 },
-  label: { fontSize: 10, fontWeight: '700', color: '#78716c', letterSpacing: 2 },
-  input: {
-    borderWidth: 1.5,
-    borderColor: '#e7e5e4',
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 15,
-    color: DARK,
-    backgroundColor: '#fafaf9',
+  titleLight: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: typography.size.h1,
+    fontWeight: typography.weight.light,
+    color: colors.textTertiary,
+    letterSpacing: typography.letterSpacing.tight,
   },
-  inputFocused: { borderColor: PRIMARY, backgroundColor: '#fff7ed' },
+  titleBold: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: typography.size.h1,
+    fontWeight: typography.weight.bold,
+    color: colors.textPrimary,
+    letterSpacing: typography.letterSpacing.tight,
+    marginTop: -4,
+    marginBottom: spacing.lg,
+  },
 
-  forgotText: { fontSize: 13, color: PRIMARY, textAlign: 'right', fontWeight: '500' },
+  errorBox: {
+    backgroundColor: colors.errorLight,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.error,
+  },
+  errorText: { color: colors.error, fontSize: typography.size.caption },
 
-  btnPrimary: { backgroundColor: PRIMARY, borderRadius: 100, paddingVertical: 16, alignItems: 'center', marginTop: 4 },
-  btnDisabled: { opacity: 0.6 },
-  btnPrimaryText: { color: '#fff', fontWeight: '700', fontSize: 15 },
+  form: { gap: spacing.md },
 
-  divider: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  dividerLine: { flex: 1, height: 1, backgroundColor: '#e7e5e4' },
-  dividerText: { color: '#a8a29e', fontSize: 13 },
+  forgotText: {
+    fontSize: typography.size.bodySmall,
+    color: colors.primary,
+    textAlign: "right",
+    fontWeight: typography.weight.medium,
+  },
 
-  btnGoogle: { borderWidth: 1.5, borderColor: '#e7e5e4', borderRadius: 100, paddingVertical: 14, alignItems: 'center', backgroundColor: '#fff' },
-  btnGoogleText: { color: DARK, fontWeight: '600', fontSize: 14 },
+  divider: { flexDirection: "row", alignItems: "center", gap: spacing.md },
+  dividerLine: { flex: 1, height: 1, backgroundColor: colors.border },
+  dividerText: { color: colors.textTertiary, fontSize: typography.size.bodySmall },
 
-  btnSecondary: { borderRadius: 100, paddingVertical: 14, alignItems: 'center', backgroundColor: '#fef3c7', borderWidth: 1.5, borderColor: '#fde68a' },
-  btnSecondaryText: { color: '#92400e', fontWeight: '600', fontSize: 14 },
+  registerLink: { alignItems: "center", paddingVertical: spacing.sm },
+  registerText: { color: colors.textSecondary, fontSize: typography.size.bodySmall },
+  registerHighlight: { color: colors.primary, fontWeight: typography.weight.semibold },
 
-  footer: { textAlign: 'center', marginTop: 32, fontSize: 13, color: '#a8a29e' },
+  footer: {
+    textAlign: "center",
+    marginTop: spacing["2xl"],
+    fontSize: typography.size.caption,
+    color: colors.textTertiary,
+  },
 });

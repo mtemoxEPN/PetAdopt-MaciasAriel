@@ -1,23 +1,53 @@
-import { useState } from 'react';
 import {
-  ActivityIndicator, KeyboardAvoidingView, Platform,
-  ScrollView, StyleSheet, Text, TextInput,
-  TouchableOpacity, View,
-} from 'react-native';
-import { supabase } from '@shared/infrastructure/supabase/client';
-import { useRouter } from 'expo-router';
+  colors,
+  spacing,
+  typography,
+  shadows,
+  radius,
+  validators,
+  validationMessages,
+} from "@shared/presentation/styles/theme";
+import { ThemedButton } from "@shared/presentation/components/ThemedButton";
+import { ThemedInput } from "@shared/presentation/components/ThemedInput";
+import { useState, useCallback } from "react";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { supabase } from "@shared/infrastructure/supabase/client";
+import { useRouter } from "expo-router";
+import Animated, { FadeInUp, FadeIn } from "react-native-reanimated";
 
 export default function ForgotPasswordScreen() {
-  const [email, setEmail]       = useState('');
+  const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [sent, setSent]         = useState(false);
-  const [error, setError]       = useState<string | null>(null);
-  const router                  = useRouter();
+  const [sent, setSent] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [fieldError, setFieldError] = useState("");
+  const router = useRouter();
 
   const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL!;
 
+  const validate = useCallback(() => {
+    if (!validators.required(email)) {
+      setFieldError(validationMessages.required);
+      return false;
+    }
+    if (!validators.email(email)) {
+      setFieldError(validationMessages.email);
+      return false;
+    }
+    setFieldError("");
+    return true;
+  }, [email]);
+
   const handleSend = async () => {
-    if (!email.trim()) return setError('Ingresa tu correo electrónico');
+    if (!validate()) return;
     setError(null);
     setIsLoading(true);
     try {
@@ -36,20 +66,22 @@ export default function ForgotPasswordScreen() {
 
   if (sent) {
     return (
-      <View style={styles.successContainer}>
-        <Text style={styles.successIcon}>📧</Text>
-        <Text style={styles.successTitle}>¡Revisa tu correo!</Text>
-        <Text style={styles.successText}>
-          Enviamos un enlace a{'\n'}
-          <Text style={styles.successEmail}>{email}</Text>
-          {'\n'}para restablecer tu contraseña.
-        </Text>
-        <TouchableOpacity
-          style={styles.btnPrimary}
-          onPress={() => router.replace('/(auth)/login')}
+      <View style={styles.root}>
+        <Animated.View
+          entering={FadeInUp.duration(600)}
+          style={styles.successContainer}
         >
-          <Text style={styles.btnPrimaryText}>Ir al Login</Text>
-        </TouchableOpacity>
+          <Text style={styles.successIcon}>📧</Text>
+          <Text style={styles.successTitle}>¡Revisa tu correo!</Text>
+          <Text style={styles.successText}>
+            Enviamos un enlace a{"\n"}
+            <Text style={styles.successEmail}>{email}</Text>
+            {"\n"}para restablecer tu contraseña.
+          </Text>
+          <ThemedButton variant="primary" onPress={() => router.replace("/(auth)/login")}>
+            Ir al Login
+          </ThemedButton>
+        </Animated.View>
       </View>
     );
   }
@@ -57,17 +89,20 @@ export default function ForgotPasswordScreen() {
   return (
     <KeyboardAvoidingView
       style={styles.root}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-
-        <View style={styles.header}>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <Animated.View entering={FadeInUp.duration(600).delay(100)} style={styles.header}>
           <Text style={styles.logo}>🐾</Text>
           <Text style={styles.brand}>PetAdopt</Text>
           <Text style={styles.tagline}>Recupera tu acceso</Text>
-        </View>
+        </Animated.View>
 
-        <View style={styles.card}>
+        <Animated.View entering={FadeInUp.duration(600).delay(250)} style={styles.card}>
           <Text style={styles.titleLight}>Olvidé mi</Text>
           <Text style={styles.titleBold}>contraseña.</Text>
 
@@ -82,93 +117,145 @@ export default function ForgotPasswordScreen() {
           )}
 
           <View style={styles.form}>
-            <View style={styles.fieldGroup}>
-              <Text style={styles.label}>CORREO</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="tu@correo.com"
-                placeholderTextColor="#9ca3af"
-                value={email}
-                onChangeText={setEmail}
-                autoCapitalize="none"
-                keyboardType="email-address"
-              />
-            </View>
+            <ThemedInput
+              label="Correo electrónico"
+              placeholder="tu@correo.com"
+              value={email}
+              onChangeText={(text: string) => {
+                setEmail(text);
+                if (fieldError) setFieldError("");
+                if (error) setError(null);
+              }}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              error={fieldError}
+              required
+            />
 
-            <TouchableOpacity
-              style={[styles.btnPrimary, isLoading && styles.btnDisabled]}
+            <ThemedButton
+              variant="primary"
+              size="lg"
               onPress={handleSend}
-              disabled={isLoading}
-              activeOpacity={0.85}
+              isLoading={isLoading}
             >
-              {isLoading
-                ? <ActivityIndicator color="#fff" />
-                : <Text style={styles.btnPrimaryText}>Enviar enlace 🐾</Text>
-              }
-            </TouchableOpacity>
+              Enviar enlace 🐾
+            </ThemedButton>
 
             <TouchableOpacity
-              style={styles.btnSecondary}
+              style={styles.backLink}
               onPress={() => router.back()}
               activeOpacity={0.7}
             >
-              <Text style={styles.btnSecondaryText}>← Volver al login</Text>
+              <Text style={styles.backText}>← Volver al login</Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </Animated.View>
 
-        <Text style={styles.footer}>Cada mascota merece un hogar 🏠</Text>
+        <Animated.Text entering={FadeIn.duration(800).delay(500)} style={styles.footer}>
+          Cada mascota merece un hogar 🏠
+        </Animated.Text>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
-const PRIMARY = '#f97316';
-const DARK    = '#1c1917';
-
 const styles = StyleSheet.create({
-  root:   { flex: 1, backgroundColor: '#fef7f0' },
-  scroll: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: 24, paddingVertical: 48 },
+  root: { flex: 1, backgroundColor: colors.background },
+  scroll: {
+    flexGrow: 1,
+    justifyContent: "center",
+    paddingHorizontal: spacing["2xl"],
+    paddingVertical: spacing["5xl"],
+  },
 
-  header:  { alignItems: 'center', marginBottom: 32 },
-  logo:    { fontSize: 56, marginBottom: 8 },
-  brand:   { fontSize: 32, fontWeight: '700', color: DARK, letterSpacing: -1 },
-  tagline: { fontSize: 14, color: '#78716c', marginTop: 4 },
+  header: { alignItems: "center", marginBottom: spacing["2xl"] },
+  logo: { fontSize: 56, marginBottom: 8 },
+  brand: {
+    fontFamily: typography.fontFamily.serif,
+    fontSize: typography.size.h1,
+    fontWeight: typography.weight.bold,
+    color: colors.textPrimary,
+    letterSpacing: typography.letterSpacing.tight,
+  },
+  tagline: {
+    fontFamily: typography.fontFamily.body,
+    fontSize: typography.size.bodySmall,
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
+  },
 
   card: {
-    backgroundColor: '#fff', borderRadius: 24, padding: 28,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08, shadowRadius: 16, elevation: 4,
+    backgroundColor: colors.surface,
+    borderRadius: 24,
+    padding: spacing["2xl"],
+    ...shadows.lg,
   },
 
-  titleLight: { fontSize: 32, fontWeight: '300', color: '#a8a29e', letterSpacing: -1 },
-  titleBold:  { fontSize: 32, fontWeight: '700', color: DARK, letterSpacing: -1, marginTop: -4, marginBottom: 12 },
-  subtitle:   { fontSize: 14, color: '#78716c', lineHeight: 22, marginBottom: 20 },
-
-  errorBox:  { backgroundColor: '#fef2f2', borderRadius: 12, padding: 12, marginBottom: 16, borderLeftWidth: 3, borderLeftColor: '#ef4444' },
-  errorText: { color: '#dc2626', fontSize: 13 },
-
-  form:       { gap: 14 },
-  fieldGroup: { gap: 6 },
-  label:      { fontSize: 10, fontWeight: '700', color: '#78716c', letterSpacing: 2 },
-  input: {
-    borderWidth: 1.5, borderColor: '#e7e5e4', borderRadius: 14,
-    paddingHorizontal: 16, paddingVertical: 14,
-    fontSize: 15, color: DARK, backgroundColor: '#fafaf9',
+  titleLight: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: typography.size.h1,
+    fontWeight: typography.weight.light,
+    color: colors.textTertiary,
+    letterSpacing: typography.letterSpacing.tight,
+  },
+  titleBold: {
+    fontFamily: typography.fontFamily.sans,
+    fontSize: typography.size.h1,
+    fontWeight: typography.weight.bold,
+    color: colors.textPrimary,
+    letterSpacing: typography.letterSpacing.tight,
+    marginTop: -4,
+    marginBottom: spacing.sm,
+  },
+  subtitle: {
+    fontFamily: typography.fontFamily.body,
+    fontSize: typography.size.bodySmall,
+    color: colors.textSecondary,
+    lineHeight: 22,
+    marginBottom: spacing.lg,
   },
 
-  btnPrimary:     { backgroundColor: PRIMARY, borderRadius: 100, paddingVertical: 16, alignItems: 'center', marginTop: 4 },
-  btnDisabled:    { opacity: 0.6 },
-  btnPrimaryText: { color: '#fff', fontWeight: '700', fontSize: 15 },
+  errorBox: {
+    backgroundColor: colors.errorLight,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.error,
+  },
+  errorText: { color: colors.error, fontSize: typography.size.caption },
 
-  btnSecondary:     { borderRadius: 100, paddingVertical: 14, alignItems: 'center', backgroundColor: '#fef3c7', borderWidth: 1.5, borderColor: '#fde68a' },
-  btnSecondaryText: { color: '#92400e', fontWeight: '600', fontSize: 14 },
+  form: { gap: spacing.md },
 
-  successContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32, gap: 16, backgroundColor: '#fef7f0' },
-  successIcon:      { fontSize: 64 },
-  successTitle:     { fontSize: 28, fontWeight: '700', color: DARK },
-  successText:      { fontSize: 15, color: '#78716c', textAlign: 'center', lineHeight: 24 },
-  successEmail:     { color: PRIMARY, fontWeight: '600' },
+  backLink: { alignItems: "center", paddingVertical: spacing.sm },
+  backText: { color: colors.textSecondary, fontSize: typography.size.bodySmall },
 
-  footer: { textAlign: 'center', marginTop: 32, fontSize: 13, color: '#a8a29e' },
+  footer: {
+    textAlign: "center",
+    marginTop: spacing["2xl"],
+    fontSize: typography.size.caption,
+    color: colors.textTertiary,
+  },
+
+  successContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: spacing["3xl"],
+    gap: spacing.md,
+    backgroundColor: colors.background,
+  },
+  successIcon: { fontSize: 64 },
+  successTitle: {
+    fontSize: typography.size.h2,
+    fontWeight: typography.weight.bold,
+    color: colors.textPrimary,
+  },
+  successText: {
+    fontSize: typography.size.body,
+    color: colors.textSecondary,
+    textAlign: "center",
+    lineHeight: 24,
+  },
+  successEmail: { color: colors.primary, fontWeight: typography.weight.semibold },
 });

@@ -1,11 +1,16 @@
-import * as FileSystem from 'expo-file-system';
-import * as ImagePicker from 'expo-image-picker';
-import { supabase } from './client';
-import { decode } from 'base64-arraybuffer';
+import * as FileSystem from "expo-file-system";
+import * as ImagePicker from "expo-image-picker";
+import { supabase } from "./client";
+import { decode } from "base64-arraybuffer";
 
-export async function pickAndUploadPetImage(refugioId: string): Promise<string | null> {
+const ALLOWED_EXTENSIONS = ["jpg", "jpeg", "png", "webp", "gif"];
+
+export async function pickAndUploadImage(
+  bucket: string,
+  pathPrefix: string
+): Promise<string | null> {
   const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-  if (status !== 'granted') throw new Error('Se necesita permiso para acceder a la galería');
+  if (status !== "granted") throw new Error("Se necesita permiso para acceder a la galería");
 
   const result = await ImagePicker.launchImageLibraryAsync({
     mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -27,21 +32,32 @@ export async function pickAndUploadPetImage(refugioId: string): Promise<string |
       encoding: FileSystem.EncodingType.Base64,
     });
   } else {
-    throw new Error('No se pudo obtener la imagen');
+    throw new Error("No se pudo obtener la imagen");
   }
 
-  const ext      = asset.uri?.split('.').pop()?.toLowerCase() ?? 'jpg';
-  const fileName = `${refugioId}/${Date.now()}.${ext}`;
+  const extMatch = asset.uri?.match(/\.([a-zA-Z0-9]+)(\?|$)/);
+  const ext = extMatch?.[1]?.toLowerCase() ?? "jpg";
+
+  if (!ALLOWED_EXTENSIONS.includes(ext)) {
+    throw new Error(`Formato no soportado. Usa: ${ALLOWED_EXTENSIONS.join(", ")}`);
+  }
+
+  const fileName = `${pathPrefix}/${Date.now()}.${ext}`;
 
   const { error } = await supabase.storage
-    .from('mascotas')
+    .from(bucket)
     .upload(fileName, decode(base64), {
-      contentType: `image/${ext}`,
+      contentType: `image/${ext === "jpg" ? "jpeg" : ext}`,
       upsert: false,
     });
 
   if (error) throw new Error(error.message);
 
-  const { data } = supabase.storage.from('mascotas').getPublicUrl(fileName);
+  const { data } = supabase.storage.from(bucket).getPublicUrl(fileName);
   return data.publicUrl;
+}
+
+/** Alias for backward compatibility with pet uploads */
+export async function pickAndUploadPetImage(refugioId: string): Promise<string | null> {
+  return pickAndUploadImage("mascotas", refugioId);
 }

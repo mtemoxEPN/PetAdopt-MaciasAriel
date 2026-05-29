@@ -4,7 +4,7 @@ import { pickAndUploadPetImage } from '@shared/infrastructure/supabase/StorageSe
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
-  ActivityIndicator, Image, ScrollView, StyleSheet,
+  ActivityIndicator, Alert, Image, ScrollView, StyleSheet,
   Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
 import { PetSpecies, PetGender, PetStatus } from '@features/pets/domain/entities/Pet';
@@ -33,14 +33,14 @@ export default function EditPetScreen() {
       const url = await pickAndUploadPetImage(user!.id);
       if (url) setPhotoUrl(url);
     } catch (e: any) {
-      alert(e.message);
+      Alert.alert('Error', e.message);
     } finally {
       setUploading(false);
     }
   };
 
   const handleUpdate = () => {
-    if (!name.trim()) return alert('El nombre es requerido');
+    if (!name.trim()) return Alert.alert('Error', 'El nombre es requerido');
     updatePet(
       {
         id,

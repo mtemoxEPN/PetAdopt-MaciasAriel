@@ -9,6 +9,9 @@ export interface IAuthRepository {
     username:  string,
     role?:     'adoptante' | 'refugio',
     fullName?: string,
+    lat?:      number,  // NUEVO
+    lng?:      number,  // NUEVO
+    address?:  string   // NUEVO
   ):                                                         Promise<User>;
   logout():                                                  Promise<void>;
   getCurrentUser():                                          Promise<User | null>;

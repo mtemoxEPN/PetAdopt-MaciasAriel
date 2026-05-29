@@ -11,6 +11,9 @@ type RegisterDto = {
   username:  string;
   role:      'adoptante' | 'refugio';
   fullName?: string;
+  lat?:      number; // NUEVO
+  lng?:      number; // NUEVO
+  address?:  string; // NUEVO
 };
 
 const authRepo       = new SupabaseAuthRepository();
@@ -31,8 +34,8 @@ export function useAuth() {
   });
 
   const registerMutation = useMutation({
-    mutationFn: ({ email, password, username, role, fullName }: RegisterDto) =>
-      registerUseCase.execute(email, password, username, role, fullName),
+    mutationFn: ({ email, password, username, role, fullName, lat, lng, address }: RegisterDto) =>
+      registerUseCase.execute(email, password, username, role, fullName, lat, lng, address),
   });
 
   const loginWithGoogle = async () => {

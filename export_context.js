@@ -6,7 +6,7 @@ const OUTPUT_FILE = 'contexto_proyecto.md';
 const ROOT_DIR = __dirname;
 
 // Carpetas que ignoramos porque son pesadas o no contienen código fuente útil
-const IGNORE_DIRS = ['node_modules', '.expo', '.vscode', '.opencode', '.git', 'assets', '__tests__'];
+const IGNORE_DIRS = ['node_modules', '.expo', '.vscode', '.opencode', '.git', 'assets', '__tests__', 'apps'];
 
 // Archivos específicos que no queremos incluir
 const IGNORE_FILES = ['package-lock.json', 'yarn.lock', OUTPUT_FILE, 'export_context.js'];

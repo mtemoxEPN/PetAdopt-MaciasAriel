@@ -28,6 +28,5 @@
   "include": [
     "src",
     "vite-env.d.ts"
-  ],
-  "extends": "expo/tsconfig.base"
+  ]
 }

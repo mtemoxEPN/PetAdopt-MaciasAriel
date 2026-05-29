@@ -11,6 +11,9 @@ export class RegisterUseCase {
     username:  string,
     role:      'adoptante' | 'refugio' = 'adoptante',
     fullName?: string,
+    lat?:      number, // NUEVO
+    lng?:      number, // NUEVO
+    address?:  string  // NUEVO
   ): Promise<User> {
     if (!email || !password || !username)
       throw new AuthError('Todos los campos son obligatorios');

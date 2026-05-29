@@ -1,69 +1,104 @@
-import { useAiChat } from '@features/ai/presentation/hooks/useAiChat';
-import { AiMessage } from '@features/ai/domain/entities/AiMessage';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useAiChat } from "@features/ai/presentation/hooks/useAiChat";
+import { AiMessage } from "@features/ai/domain/entities/AiMessage";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  ActivityIndicator, FlatList, KeyboardAvoidingView,
-  Platform, StyleSheet, Text, TextInput,
-  TouchableOpacity, View,
-} from 'react-native';
+  ActivityIndicator,
+  FlatList,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import {
+  colors,
+  spacing,
+  typography,
+  shadows,
+  radius,
+} from "@shared/presentation/styles/theme";
 
 const SUGGESTIONS = [
-  '¿Qué debo darle de comer a un cachorro?',
-  '¿Con qué frecuencia debo vacunar a mi gato?',
-  '¿Cómo adapto una mascota adoptada a mi hogar?',
-  '¿Cuáles son señales de que mi perro está enfermo?',
+  "¿Qué debo darle de comer a un cachorro?",
+  "¿Con qué frecuencia debo vacunar a mi gato?",
+  "¿Cómo adapto una mascota adoptada a mi hogar?",
+  "¿Cuáles son señales de que mi perro está enfermo?",
 ];
 
 export default function AiChatScreen() {
   const { messages, sendMessage, isLoading, error, clearChat } = useAiChat();
-  const [input, setInput]   = useState('');
-  const listRef             = useRef<FlatList>(null);
+  const [input, setInput] = useState("");
+  const listRef = useRef<FlatList>(null);
 
   useEffect(() => {
     if (messages.length > 0) {
-      setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 100);
+      const timer = setTimeout(
+        () => listRef.current?.scrollToEnd({ animated: true }),
+        100
+      );
+      return () => clearTimeout(timer);
     }
   }, [messages.length, isLoading]);
 
   const handleSend = useCallback(() => {
     if (!input.trim() || isLoading) return;
     sendMessage(input.trim());
-    setInput('');
+    setInput("");
   }, [input, isLoading, sendMessage]);
 
-  const renderMessage = ({ item }: { item: AiMessage }) => {
-    const isUser = item.role === 'user';
-    return (
-      <View style={[styles.msgRow, isUser && styles.msgRowUser]}>
-        {!isUser && (
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>🤖</Text>
+  const renderMessage = useCallback(
+    ({ item }: { item: AiMessage }) => {
+      const isUser = item.role === "user";
+      return (
+        <View style={[styles.msgRow, isUser && styles.msgRowUser]}>
+          {!isUser && (
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>🤖</Text>
+            </View>
+          )}
+          <View
+            style={[
+              styles.bubble,
+              isUser ? styles.bubbleUser : styles.bubbleModel,
+            ]}
+          >
+            <Text
+              style={[
+                styles.bubbleText,
+                isUser && styles.bubbleTextUser,
+              ]}
+            >
+              {item.content}
+            </Text>
+            <Text style={[styles.time, isUser && styles.timeUser]}>
+              {item.createdAt.toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </Text>
           </View>
-        )}
-        <View style={[styles.bubble, isUser ? styles.bubbleUser : styles.bubbleModel]}>
-          <Text style={[styles.bubbleText, isUser && styles.bubbleTextUser]}>
-            {item.content}
-          </Text>
-          <Text style={[styles.time, isUser && styles.timeUser]}>
-            {item.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-          </Text>
         </View>
-      </View>
-    );
-  };
+      );
+    },
+    []
+  );
 
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={90}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
     >
-      {/* Header info */}
+      {/* Header */}
       <View style={styles.headerBanner}>
         <Text style={styles.headerBannerIcon}>🐾</Text>
         <View style={styles.headerBannerInfo}>
           <Text style={styles.headerBannerTitle}>Asistente PetAdopt</Text>
-          <Text style={styles.headerBannerSub}>Especialista en salud y cuidado animal</Text>
+          <Text style={styles.headerBannerSub}>
+            Especialista en salud y cuidado animal
+          </Text>
         </View>
         {messages.length > 0 && (
           <TouchableOpacity onPress={clearChat} style={styles.clearBtn}>
@@ -72,12 +107,15 @@ export default function AiChatScreen() {
         )}
       </View>
 
-      {/* Lista de mensajes o sugerencias */}
+      {/* Messages or Suggestions */}
       {messages.length === 0 ? (
         <View style={styles.suggestionsContainer}>
-          <Text style={styles.suggestionsTitle}>¿En qué puedo ayudarte hoy?</Text>
+          <Text style={styles.suggestionsTitle}>
+            ¿En qué puedo ayudarte hoy?
+          </Text>
           <Text style={styles.suggestionsSubtitle}>
-            Pregúntame sobre salud, cuidados, alimentación o el proceso de adopción.
+            Pregúntame sobre salud, cuidados, alimentación o el proceso de
+            adopción.
           </Text>
           <View style={styles.suggestionsList}>
             {SUGGESTIONS.map((s, i) => (
@@ -111,7 +149,7 @@ export default function AiChatScreen() {
             <Text style={styles.avatarText}>🤖</Text>
           </View>
           <View style={styles.typingBubble}>
-            <ActivityIndicator size="small" color="#f97316" />
+            <ActivityIndicator size="small" color={colors.primary} />
             <Text style={styles.typingText}>Pensando...</Text>
           </View>
         </View>
@@ -131,13 +169,16 @@ export default function AiChatScreen() {
           value={input}
           onChangeText={setInput}
           placeholder="Pregunta sobre tu mascota..."
-          placeholderTextColor="#a8a29e"
+          placeholderTextColor={colors.textTertiary}
           multiline
           maxLength={500}
           onSubmitEditing={handleSend}
         />
         <TouchableOpacity
-          style={[styles.sendBtn, (!input.trim() || isLoading) && styles.sendBtnOff]}
+          style={[
+            styles.sendBtn,
+            (!input.trim() || isLoading) && styles.sendBtnOff,
+          ]}
           onPress={handleSend}
           disabled={!input.trim() || isLoading}
           activeOpacity={0.85}
@@ -149,72 +190,192 @@ export default function AiChatScreen() {
   );
 }
 
-const PRIMARY = '#f97316';
-const styles  = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fef7f0' },
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
 
   headerBanner: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    paddingHorizontal: 16, paddingVertical: 12,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1, borderBottomColor: '#f5f5f4',
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    backgroundColor: colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderLight,
+    ...shadows.sm,
   },
-  headerBannerIcon:  { fontSize: 36 },
-  headerBannerInfo:  { flex: 1 },
-  headerBannerTitle: { fontSize: 15, fontWeight: '700', color: '#1c1917' },
-  headerBannerSub:   { fontSize: 12, color: '#78716c', marginTop: 1 },
-  clearBtn:          { paddingHorizontal: 12, paddingVertical: 6, backgroundColor: '#fef3c7', borderRadius: 100 },
-  clearBtnText:      { fontSize: 12, color: '#92400e', fontWeight: '600' },
+  headerBannerIcon: { fontSize: 36 },
+  headerBannerInfo: { flex: 1 },
+  headerBannerTitle: {
+    fontSize: typography.size.body,
+    fontWeight: typography.weight.bold,
+    color: colors.textPrimary,
+  },
+  headerBannerSub: {
+    fontSize: typography.size.caption,
+    color: colors.textSecondary,
+    marginTop: 1,
+  },
+  clearBtn: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    backgroundColor: colors.warningLight,
+    borderRadius: radius.full,
+  },
+  clearBtnText: {
+    fontSize: typography.size.caption,
+    color: "#92400e",
+    fontWeight: typography.weight.semibold,
+  },
 
-  suggestionsContainer: { flex: 1, padding: 24, gap: 16 },
-  suggestionsTitle:     { fontSize: 22, fontWeight: '700', color: '#1c1917' },
-  suggestionsSubtitle:  { fontSize: 14, color: '#78716c', lineHeight: 22 },
-  suggestionsList:      { gap: 10 },
+  suggestionsContainer: {
+    flex: 1,
+    padding: spacing["2xl"],
+    gap: spacing.md,
+  },
+  suggestionsTitle: {
+    fontSize: typography.size.h2,
+    fontWeight: typography.weight.bold,
+    color: colors.textPrimary,
+  },
+  suggestionsSubtitle: {
+    fontSize: typography.size.bodySmall,
+    color: colors.textSecondary,
+    lineHeight: 22,
+  },
+  suggestionsList: { gap: spacing.sm },
   suggestionChip: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: '#fff', borderRadius: 16, padding: 16,
-    borderWidth: 1.5, borderColor: '#e7e5e4',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04, shadowRadius: 4, elevation: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    ...shadows.sm,
   },
-  suggestionText:  { flex: 1, fontSize: 14, color: '#44403c', lineHeight: 20 },
-  suggestionArrow: { fontSize: 16, color: PRIMARY, marginLeft: 8 },
+  suggestionText: {
+    flex: 1,
+    fontSize: typography.size.bodySmall,
+    color: colors.textPrimary,
+    lineHeight: 20,
+  },
+  suggestionArrow: {
+    fontSize: 16,
+    color: colors.primary,
+    marginLeft: spacing.sm,
+  },
 
-  messagesList: { padding: 16, gap: 12 },
+  messagesList: { padding: spacing.lg, gap: spacing.md },
 
-  msgRow:     { flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
-  msgRowUser: { justifyContent: 'flex-end' },
+  msgRow: { flexDirection: "row", alignItems: "flex-end", gap: spacing.sm },
+  msgRowUser: { justifyContent: "flex-end" },
 
-  avatar:     { width: 32, height: 32, borderRadius: 16, backgroundColor: '#fff7ed', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#fed7aa' },
+  avatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.primaryLight,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#fed7aa",
+  },
   avatarText: { fontSize: 16 },
 
-  bubble:          { maxWidth: '78%', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 10 },
-  bubbleUser:      { backgroundColor: PRIMARY, borderBottomRightRadius: 4 },
-  bubbleModel:     { backgroundColor: '#fff', borderBottomLeftRadius: 4, borderWidth: 1, borderColor: '#e7e5e4' },
-  bubbleText:      { fontSize: 15, color: '#1c1917', lineHeight: 22 },
-  bubbleTextUser:  { color: '#fff' },
-  time:            { fontSize: 10, color: '#a8a29e', marginTop: 4, alignSelf: 'flex-end' },
-  timeUser:        { color: 'rgba(255,255,255,0.7)' },
+  bubble: {
+    maxWidth: "78%",
+    borderRadius: 20,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  bubbleUser: {
+    backgroundColor: colors.primary,
+    borderBottomRightRadius: 4,
+  },
+  bubbleModel: {
+    backgroundColor: colors.surface,
+    borderBottomLeftRadius: 4,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  bubbleText: {
+    fontSize: typography.size.body,
+    color: colors.textPrimary,
+    lineHeight: 22,
+  },
+  bubbleTextUser: { color: colors.white },
+  time: {
+    fontSize: 10,
+    color: colors.textTertiary,
+    marginTop: spacing.xs,
+    alignSelf: "flex-end",
+  },
+  timeUser: { color: "rgba(255,255,255,0.7)" },
 
-  typingRow:    { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingBottom: 8 },
-  typingBubble: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#fff', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 10, borderWidth: 1, borderColor: '#e7e5e4' },
-  typingText:   { fontSize: 13, color: '#a8a29e' },
+  typingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.sm,
+  },
+  typingBubble: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    backgroundColor: colors.surface,
+    borderRadius: 20,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  typingText: { fontSize: 13, color: colors.textTertiary },
 
-  errorBox:  { marginHorizontal: 16, marginBottom: 8, backgroundColor: '#fef2f2', borderRadius: 12, padding: 12, borderLeftWidth: 3, borderLeftColor: '#ef4444' },
-  errorText: { color: '#dc2626', fontSize: 13 },
+  errorBox: {
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.sm,
+    backgroundColor: colors.errorLight,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.error,
+  },
+  errorText: { color: colors.error, fontSize: typography.size.caption },
 
   inputBar: {
-    flexDirection: 'row', alignItems: 'center', gap: 10,
-    paddingHorizontal: 16, paddingVertical: 12,
-    backgroundColor: '#fff',
-    borderTopWidth: 1, borderTopColor: '#f5f5f4',
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    backgroundColor: colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: colors.borderLight,
   },
   input: {
-    flex: 1, borderWidth: 1.5, borderColor: '#e7e5e4', borderRadius: 20,
-    paddingHorizontal: 16, paddingVertical: 10,
-    maxHeight: 100, fontSize: 15, color: '#1c1917', backgroundColor: '#fafaf9',
+    flex: 1,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    borderRadius: 20,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    maxHeight: 100,
+    fontSize: typography.size.body,
+    color: colors.textPrimary,
+    backgroundColor: colors.gray100,
   },
-  sendBtn:    { width: 42, height: 42, borderRadius: 21, backgroundColor: PRIMARY, justifyContent: 'center', alignItems: 'center' },
-  sendBtnOff: { backgroundColor: '#e7e5e4' },
-  sendIcon:   { color: '#fff', fontSize: 20, fontWeight: '700' },
+  sendBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: colors.primary,
+    justifyContent: "center",
+    alignItems: "center",
+    ...shadows.sm,
+  },
+  sendBtnOff: { backgroundColor: colors.gray300 },
+  sendIcon: { color: colors.white, fontSize: 20, fontWeight: "700" },
 });

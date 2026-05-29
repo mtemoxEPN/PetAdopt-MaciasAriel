@@ -8,8 +8,7 @@
       "@shared/*": ["src/shared/*"]
     },
     "baseUrl": ".",
-    "lib": ["ESNext"],
-    "ignoreDeprecations": "6.0"
+    "lib": ["ESNext"]
   },
   "include": [
     "**/*.ts",

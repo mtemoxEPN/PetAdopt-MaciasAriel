@@ -49,7 +49,7 @@ export default function PetDetailScreen() {
           </View>
         )}
 
-        {user?.role === 'adoptante' && (
+        {user && user.role !== 'refugio' && (
           <TouchableOpacity
             style={styles.btnAdopt}
             onPress={() => router.push({ pathname: '/(app)/solicitudes/nueva', params: { petId: pet.id, refugioId: pet.refugioId } })}
