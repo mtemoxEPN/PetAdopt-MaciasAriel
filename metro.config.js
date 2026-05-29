@@ -6,8 +6,8 @@ const config = getDefaultConfig(__dirname);
 const NODE_MODULES_TO_BLOCK = [
   'stream', 'crypto', 'http', 'https', 'net', 'tls',
   'fs', 'path', 'os', 'zlib', 'events', 'buffer',
-  'url', 'querystring', 'string_decoder', 'punycode',
-  'assert', 'util', 'vm', 'constants', 'domain',
+  'string_decoder', 'assert', 'util', 'vm', 'constants', 'domain',
+  'ws'
 ];
 
 config.resolver.resolveRequest = (context, moduleName, platform) => {

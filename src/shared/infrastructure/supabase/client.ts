@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import * as SecureStore from 'expo-secure-store';
+import 'react-native-url-polyfill/auto';
 
 // Supbase espera métodos getItem/setItem/removeItem pero expo-secure-store 
 // expone getItemAsync/setItemAsynbc/removeItemAsync - este adaptador los mejora
