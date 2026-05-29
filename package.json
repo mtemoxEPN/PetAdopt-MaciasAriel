@@ -57,5 +57,25 @@
     "eslint-config-expo": "~10.0.0",
     "typescript": "~5.9.2"
   },
+  "react-native": {
+    "stream": false,
+    "crypto": false,
+    "ws": false,
+    "net": false,
+    "tls": false,
+    "fs": false,
+    "http": false,
+    "https": false,
+    "os": false,
+    "zlib": false,
+    "events": false,
+    "util": false,
+    "buffer": false,
+    "url": false,
+    "@opentelemetry/api": false,
+    "@opentelemetry/core": false,
+    "@opentelemetry/context-async-hooks": false,
+    "@opentelemetry/sdk-trace-base": false
+  },
   "private": true
 }
