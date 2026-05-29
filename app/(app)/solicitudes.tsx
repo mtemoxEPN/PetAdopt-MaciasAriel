@@ -1,6 +1,8 @@
 import { useSolicitudes } from "@features/solicitudes/presentation/hooks/useSolicitudes";
+import { useRouter } from "expo-router";
 import { useAuthStore } from "@features/auth/presentation/store/authStore";
 import { Solicitud } from "@features/solicitudes/domain/entities/Solicitud";
+import { supabase } from "@shared/infrastructure/supabase/client";
 import {
   ActivityIndicator,
   Alert,
@@ -17,43 +19,72 @@ import {
   colors,
   spacing,
   typography,
-  shadows,
   radius,
 } from "@shared/presentation/styles/theme";
 import { ThemedCard } from "@shared/presentation/components/ThemedCard";
 
 export default function SolicitudesScreen() {
   const user = useAuthStore((s) => s.user);
-  const { solicitudes, isLoading, updateStatus, isUpdating } =
-    useSolicitudes();
+  const { solicitudes, isLoading, updateStatus, isUpdating } = useSolicitudes();
   const isRefugio = user?.role === "refugio";
+  const router = useRouter();
 
+  // ✅ TODOS los hooks ANTES de cualquier return condicional
   const handleUpdateStatus = useCallback(
     (id: string, action: "aprobada" | "rechazada", petName: string) => {
       Alert.alert(
         action === "aprobada" ? "✅ Aprobar solicitud" : "❌ Rechazar solicitud",
-        `¿Confirmas ${
-          action === "aprobada" ? "aprobar" : "rechazar"
-        } la solicitud para ${petName}?`,
+        `¿Confirmas ${action === "aprobada" ? "aprobar" : "rechazar"} la solicitud para ${petName}?`,
         [
           { text: "Cancelar", style: "cancel" },
-          {
-            text: "Confirmar",
-            onPress: () => updateStatus({ id, status: action }),
-          },
+          { text: "Confirmar", onPress: () => updateStatus({ id, status: action }) },
         ]
       );
     },
     [updateStatus]
   );
 
-  if (isLoading) {
-    return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
-    );
-  }
+  const handleOpenChat = useCallback(
+    async (solicitudId: string, mascotaName: string) => {
+      try {
+        const roomName = `solicitud-${solicitudId}`;
+
+        // Buscar sala existente
+        const { data: existing } = await supabase
+          .from("rooms")
+          .select("id")
+          .eq("name", roomName)
+          .single();
+
+        if (existing) {
+          router.push(`/(app)/chat/${existing.id}`);
+          return;
+        }
+
+        // Crear sala nueva si no existe
+        const { data: newRoom, error } = await supabase
+          .from("rooms")
+          .insert({
+            name: roomName,
+            created_by: user!.id,
+          })
+          .select("id")
+          .single();
+
+        if (error) {
+          Alert.alert("Error", "No se pudo abrir el chat");
+          return;
+        }
+
+        if (newRoom) {
+          router.push(`/(app)/chat/${newRoom.id}`);
+        }
+      } catch (e) {
+        Alert.alert("Error", "No se pudo abrir el chat");
+      }
+    },
+    [router, user]
+  );
 
   const getStatusColor = (status: string) => {
     if (status === "aprobada") return colors.success;
@@ -100,10 +131,7 @@ export default function SolicitudesScreen() {
               <View
                 style={[
                   styles.statusBadge,
-                  {
-                    backgroundColor:
-                      getStatusColor(item.status) + "20",
-                  },
+                  { backgroundColor: getStatusColor(item.status) + "20" },
                 ]}
               >
                 <Text
@@ -116,16 +144,21 @@ export default function SolicitudesScreen() {
                 </Text>
               </View>
 
+              {item.status === "aprobada" && (
+                <TouchableOpacity
+                  style={styles.btnChat}
+                  onPress={() => handleOpenChat(item.id, item.mascotaName ?? "Mascota")}
+                >
+                  <Text style={styles.btnChatText}>💬 Iniciar Chat</Text>
+                </TouchableOpacity>
+              )}
+
               {isRefugio && item.status === "pendiente" && (
                 <View style={styles.actionRow}>
                   <TouchableOpacity
                     style={styles.btnApprove}
                     onPress={() =>
-                      handleUpdateStatus(
-                        item.id,
-                        "aprobada",
-                        item.mascotaName ?? ""
-                      )
+                      handleUpdateStatus(item.id, "aprobada", item.mascotaName ?? "")
                     }
                     disabled={isUpdating}
                   >
@@ -134,11 +167,7 @@ export default function SolicitudesScreen() {
                   <TouchableOpacity
                     style={styles.btnReject}
                     onPress={() =>
-                      handleUpdateStatus(
-                        item.id,
-                        "rechazada",
-                        item.mascotaName ?? ""
-                      )
+                      handleUpdateStatus(item.id, "rechazada", item.mascotaName ?? "")
                     }
                     disabled={isUpdating}
                   >
@@ -151,8 +180,17 @@ export default function SolicitudesScreen() {
         </ThemedCard>
       </Animated.View>
     ),
-    [isRefugio, handleUpdateStatus, isUpdating]
+    [isRefugio, handleUpdateStatus, isUpdating, handleOpenChat]
   );
+
+  // ✅ return condicional DESPUÉS de todos los hooks
+  if (isLoading) {
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -185,9 +223,7 @@ export default function SolicitudesScreen() {
           <View style={styles.centered}>
             <Text style={styles.emptyIcon}>📋</Text>
             <Text style={styles.emptyTitle}>
-              {isRefugio
-                ? "No hay solicitudes aún"
-                : "No has hecho solicitudes"}
+              {isRefugio ? "No hay solicitudes aún" : "No has hecho solicitudes"}
             </Text>
             <Text style={styles.emptySubtitle}>
               {isRefugio
@@ -315,5 +351,19 @@ const styles = StyleSheet.create({
     color: colors.textTertiary,
     textAlign: "center",
     lineHeight: 22,
+  },
+  btnChat: {
+    backgroundColor: colors.infoLight,
+    borderRadius: radius.full,
+    paddingVertical: spacing.sm,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#93c5fd",
+    marginTop: spacing.xs,
+  },
+  btnChatText: {
+    color: colors.info,
+    fontWeight: typography.weight.bold,
+    fontSize: 13,
   },
 });

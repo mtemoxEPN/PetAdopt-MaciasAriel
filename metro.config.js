@@ -3,25 +3,25 @@ const { getDefaultConfig } = require('expo/metro-config');
 
 const config = getDefaultConfig(__dirname);
 
+const NODE_MODULES_TO_BLOCK = [
+  'stream', 'crypto', 'http', 'https', 'net', 'tls',
+  'fs', 'path', 'os', 'zlib', 'events', 'buffer',
+  'url', 'querystring', 'string_decoder', 'punycode',
+  'assert', 'util', 'vm', 'constants', 'domain',
+];
+
 config.resolver.resolveRequest = (context, moduleName, platform) => {
-  const nodeModules = ['stream', 'crypto', 'http', 'https', 'net', 'tls', 'fs', 'path', 'os', 'zlib'];
-  if (nodeModules.includes(moduleName)) {
+  if (NODE_MODULES_TO_BLOCK.includes(moduleName)) {
+    return { type: 'empty' };
+  }
+  // Bloquear el archivo específico de supabase que tiene el dynamic import con variable
+  if (
+    moduleName.includes('@opentelemetry') ||
+    moduleName.includes('opentelemetry')
+  ) {
     return { type: 'empty' };
   }
   return context.resolveRequest(context, moduleName, platform);
-};
-
-// Banear el import dinámico con variable que rompe Hermes
-config.transformer = {
-  ...config.transformer,
-  minifierConfig: {
-    keep_classnames: true,
-    keep_fnames: true,
-    mangle: {
-      keep_classnames: true,
-      keep_fnames: true,
-    },
-  },
 };
 
 config.resolver.blockList = [

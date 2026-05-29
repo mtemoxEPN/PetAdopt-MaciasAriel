@@ -55,6 +55,13 @@ export default function AppLayout() {
           tabBarIcon: () => <Text style={styles.icon}>📍</Text>,
         }}
       />
+      <Tabs.Screen
+        name="chats"
+        options={{
+          title: "Chats",
+          tabBarIcon: () => <Text style={styles.icon}>💬</Text>,
+        }}
+      />
       <Tabs.Screen name="pets/adoptante-home" options={{ href: null }} />
       <Tabs.Screen name="pets/refugio-home" options={{ href: null }} />
       <Tabs.Screen name="pets/[id]" options={{ href: null }} />
