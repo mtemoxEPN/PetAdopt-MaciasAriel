@@ -7,7 +7,7 @@ import {
   View,
   type TouchableOpacityProps,
 } from "react-native";
-import { colors, shadows, radius, typography } from "../styles/theme";
+import { colors, shadows, radius, typography, spacing } from "../styles/theme";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -43,13 +43,13 @@ export const ThemedButton: React.FC<ThemedButtonProps> = ({
   }));
 
   const handlePressIn = () => {
-    scale.value = withTiming(0.96, { duration: 100 });
-    onPressIn?.();
+    scale.value = withTiming(0.95, { duration: 80 });
+    onPressIn?.(undefined as any);
   };
 
   const handlePressOut = () => {
-    scale.value = withSpring(1, { stiffness: 400, damping: 20 });
-    onPressOut?.();
+    scale.value = withSpring(1, { stiffness: 400, damping: 18 });
+    onPressOut?.(undefined as any);
   };
 
   const isDisabled = disabled || isLoading;
@@ -62,16 +62,16 @@ export const ThemedButton: React.FC<ThemedButtonProps> = ({
       shadow: shadows.primary,
     },
     secondary: {
-      background: colors.warningLight,
-      text: "#92400E",
-      border: "#FDE68A",
-      shadow: shadows.sm,
+      background: colors.secondaryLight,
+      text: colors.secondary,
+      border: "transparent",
+      shadow: shadows.xs,
     },
     outline: {
-      background: colors.surface,
+      background: colors.background,
       text: colors.textPrimary,
       border: colors.border,
-      shadow: shadows.sm,
+      shadow: shadows.glass,
     },
     ghost: {
       background: "transparent",
@@ -82,9 +82,9 @@ export const ThemedButton: React.FC<ThemedButtonProps> = ({
   };
 
   const sizeStyles = {
-    sm: { paddingVertical: 10, paddingHorizontal: 16, fontSize: 13 },
-    md: { paddingVertical: 14, paddingHorizontal: 24, fontSize: 15 },
-    lg: { paddingVertical: 16, paddingHorizontal: 32, fontSize: 16 },
+    sm: { paddingVertical: 10, paddingHorizontal: 18, fontSize: 13 },
+    md: { paddingVertical: 14, paddingHorizontal: 26, fontSize: 15 },
+    lg: { paddingVertical: 17, paddingHorizontal: 32, fontSize: 16 },
   };
 
   const vs = variantStyles[variant];
@@ -93,7 +93,7 @@ export const ThemedButton: React.FC<ThemedButtonProps> = ({
   return (
     <Animated.View style={[animatedStyle, vs.shadow]}>
       <TouchableOpacity
-        activeOpacity={0.85}
+        activeOpacity={0.9}
         disabled={isDisabled}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
@@ -104,7 +104,7 @@ export const ThemedButton: React.FC<ThemedButtonProps> = ({
             borderColor: vs.border,
             paddingVertical: sz.paddingVertical,
             paddingHorizontal: sz.paddingHorizontal,
-            opacity: isDisabled ? 0.5 : 1,
+            opacity: isDisabled ? 0.45 : 1,
           },
           style,
         ]}
@@ -115,12 +115,7 @@ export const ThemedButton: React.FC<ThemedButtonProps> = ({
         ) : (
           <>
             {leftIcon && <View style={styles.iconLeft}>{leftIcon}</View>}
-            <Text
-              style={[
-                styles.text,
-                { color: vs.text, fontSize: sz.fontSize },
-              ]}
-            >
+            <Text style={[styles.text, { color: vs.text, fontSize: sz.fontSize }]}>
               {children}
             </Text>
             {rightIcon && <View style={styles.iconRight}>{rightIcon}</View>}
@@ -134,16 +129,17 @@ export const ThemedButton: React.FC<ThemedButtonProps> = ({
 const styles = StyleSheet.create({
   base: {
     borderRadius: radius.full,
-    borderWidth: 1.5,
+    borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
     flexDirection: "row",
     gap: 8,
+    minHeight: 52,
   },
   text: {
     fontFamily: typography.fontFamily.sans,
     fontWeight: typography.weight.semibold,
-    letterSpacing: typography.letterSpacing.wide,
+    letterSpacing: 0.2,
   },
   iconLeft: { marginRight: 4 },
   iconRight: { marginLeft: 4 },

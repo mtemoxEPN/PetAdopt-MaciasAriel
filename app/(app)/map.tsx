@@ -1,9 +1,11 @@
 import { useMap } from '@features/map/presentation/hooks/useMap';
+import { colors, spacing, typography, shadows, radius } from "@shared/presentation/styles/theme";
 import { useState, useRef } from 'react';
 import {
   ActivityIndicator, Linking, Modal, StyleSheet,
   Text, TouchableOpacity, View, Platform
 } from 'react-native';
+import { MapPin, Building2, Car, Navigation, Phone, AlertCircle } from 'lucide-react-native';
 import { WebView } from 'react-native-webview';
 
 export default function MapScreen() {
@@ -180,17 +182,17 @@ export default function MapScreen() {
       />
 
       <TouchableOpacity style={styles.myLocationBtn} onPress={centerOnUser} disabled={!userLocation} activeOpacity={0.85}>
-        <Text style={styles.myLocationIcon}>📍</Text>
+        <Navigation size={22} color={userLocation ? colors.primary : colors.textTertiary} />
       </TouchableOpacity>
 
       {locationError && (
         <View style={styles.errorBanner}>
-          <Text style={styles.errorText}>⚠ {locationError}</Text>
+          <Text style={styles.errorText}>{locationError}</Text>
         </View>
       )}
 
       <View style={styles.countBadge}>
-        <Text style={styles.countText}>🏥 {refugios.length} refugios activos</Text>
+        <Text style={styles.countText}>{refugios.length} refugios activos</Text>
       </View>
 
       {/* Modal interactivo de información */}
@@ -206,14 +208,14 @@ export default function MapScreen() {
             <View style={styles.modalCard}>
               <View style={styles.modalHandle} />
               <View style={styles.modalHeader}>
-                <Text style={styles.modalIcon}>🏥</Text>
+                <Text style={styles.modalIcon}><Building2 size={40} color={colors.primary} /></Text>
                 <View style={styles.modalHeaderInfo}>
                   <Text style={styles.modalName}>{selected.name}</Text>
-                  {selected.address && <Text style={styles.modalAddress}>📍 {selected.address}</Text>}
+                  {selected.address && <Text style={styles.modalAddress}>{selected.address}</Text>}
                   {distance ? (
-                    <Text style={styles.distanceBadge}>🚗 A {distance} km de tu ubicación</Text>
+                    <Text style={styles.distanceBadge}>A {distance} km de tu ubicación</Text>
                   ) : (
-                    <Text style={styles.distanceBadgePending}>📍 Ubicación de referencia</Text>
+                    <Text style={styles.distanceBadgePending}>Ubicación de referencia</Text>
                   )}
                 </View>
               </View>
@@ -222,12 +224,12 @@ export default function MapScreen() {
 
               {/* Botón de ruteo externo */}
               <TouchableOpacity style={styles.modalNavigateBtn} onPress={openExternalNavigation} activeOpacity={0.85}>
-                <Text style={styles.modalNavigateText}>🗺️ Cómo llegar (Abrir en GPS)</Text>
+                <Text style={styles.modalNavigateText}>Cómo llegar (Abrir en GPS)</Text>
               </TouchableOpacity>
 
               {selected.phone && (
                 <TouchableOpacity style={styles.modalPhoneBtn} onPress={() => Linking.openURL(`tel:${selected.phone}`)}>
-                  <Text style={styles.modalPhoneText}>📞 Llamar: {selected.phone}</Text>
+                  <Text style={styles.modalPhoneText}>Llamar: {selected.phone}</Text>
                 </TouchableOpacity>
               )}
 
@@ -243,47 +245,86 @@ export default function MapScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  centered:  { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12, backgroundColor: '#fef7f0' },
-  loadingText: { color: '#78716c', fontSize: 14, fontWeight: '500' },
+  container: { flex: 1, backgroundColor: colors.background },
+  centered: { flex: 1, justifyContent: "center", alignItems: "center", gap: spacing.md, backgroundColor: colors.background },
+  loadingText: { color: colors.textSecondary, fontSize: typography.size.bodySmall, fontWeight: typography.weight.medium },
   map: { flex: 1 },
   myLocationBtn: {
-    position: 'absolute', top: 16, right: 16,
-    backgroundColor: '#fff', width: 48, height: 48,
-    borderRadius: 24, justifyContent: 'center', alignItems: 'center',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15, shadowRadius: 6, elevation: 4,
+    position: "absolute",
+    top: spacing.lg,
+    right: spacing.lg,
+    backgroundColor: colors.background,
+    width: 50,
+    height: 50,
+    borderRadius: radius.full,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   myLocationIcon: { fontSize: 22 },
   errorBanner: {
-    position: 'absolute', top: 16, left: 16, right: 72,
-    backgroundColor: '#fef2f2', borderRadius: 12, padding: 10,
-    borderLeftWidth: 3, borderLeftColor: '#ef4444',
+    position: "absolute",
+    top: spacing.lg,
+    left: spacing.lg,
+    right: 72,
+    backgroundColor: colors.errorLight,
+    borderRadius: radius.sm,
+    padding: spacing.sm,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.error,
   },
-  errorText: { color: '#dc2626', fontSize: 12 },
+  errorText: { color: colors.error, fontSize: typography.size.caption },
   countBadge: {
-    position: 'absolute', bottom: 30, left: 16,
-    backgroundColor: 'rgba(28, 25, 23, 0.9)', borderRadius: 100,
-    paddingHorizontal: 16, paddingVertical: 10,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1, shadowRadius: 4, elevation: 2,
+    position: "absolute",
+    bottom: 100,
+    left: spacing.lg,
+    backgroundColor: colors.textPrimary,
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
   },
-  countText: { fontSize: 13, fontWeight: '700', color: '#fff' },
-  modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.4)' },
-  modalCard: { backgroundColor: '#fff', borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, gap: 14 },
-  modalHandle: { width: 36, height: 4, borderRadius: 2, backgroundColor: '#e7e5e4', alignSelf: 'center', marginBottom: 4 },
-  modalHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 14 },
+  countText: { fontSize: typography.size.bodySmall, fontWeight: typography.weight.bold, color: colors.white },
+  modalOverlay: { flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(28,10,0,0.35)" },
+  modalCard: {
+    backgroundColor: colors.background,
+    borderTopLeftRadius: radius["2xl"],
+    borderTopRightRadius: radius["2xl"],
+    padding: spacing["2xl"],
+    gap: spacing.md,
+    borderTopWidth: 1,
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderColor: colors.border,
+  },
+  modalHandle: { width: 36, height: 4, borderRadius: radius.full, backgroundColor: colors.gray300, alignSelf: "center", marginBottom: spacing.xs },
+  modalHeader: { flexDirection: "row", alignItems: "flex-start", gap: spacing.md },
   modalIcon: { fontSize: 40 },
   modalHeaderInfo: { flex: 1 },
-  modalName: { fontSize: 20, fontWeight: '700', color: '#1c1917' },
-  modalAddress: { fontSize: 14, color: '#78716c', marginTop: 4 },
-  distanceBadge: { fontSize: 13, color: '#f97316', fontWeight: '700', marginTop: 4 },
-  distanceBadgePending: { fontSize: 13, color: '#78716c', fontWeight: '500', marginTop: 4 },
-  modalDescription: { fontSize: 14, color: '#44403c', lineHeight: 22, backgroundColor: '#fafaf9', borderRadius: 12, padding: 14 },
-  modalNavigateBtn: { backgroundColor: '#f97316', borderRadius: 14, padding: 14, alignItems: 'center' },
-  modalNavigateText: { fontSize: 15, fontWeight: '700', color: '#fff' },
-  modalPhoneBtn: { backgroundColor: '#dcfce7', borderRadius: 14, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: '#86efac' },
-  modalPhoneText: { fontSize: 15, fontWeight: '700', color: '#16a34a' },
-  modalCloseBtn: { backgroundColor: '#f5f5f4', borderRadius: 100, paddingVertical: 14, alignItems: 'center' },
-  modalCloseBtnText: { fontSize: 15, fontWeight: '600', color: '#78716c' },
+  modalName: {
+    fontSize: typography.size.h3,
+    fontWeight: typography.weight.extrabold,
+    color: colors.textPrimary,
+  },
+  modalAddress: { fontSize: typography.size.bodySmall, color: colors.textSecondary, marginTop: spacing.xs },
+  distanceBadge: { fontSize: typography.size.bodySmall, color: colors.primary, fontWeight: typography.weight.bold, marginTop: spacing.xs },
+  distanceBadgePending: { fontSize: typography.size.bodySmall, color: colors.textSecondary, fontWeight: typography.weight.medium, marginTop: spacing.xs },
+  modalDescription: { fontSize: typography.size.bodySmall, color: colors.textSecondary, lineHeight: 22, backgroundColor: colors.gray50, borderRadius: radius.sm, padding: spacing.md },
+  modalNavigateBtn: {
+    backgroundColor: colors.primary,
+    borderRadius: radius.full,
+    padding: spacing.md,
+    alignItems: "center",
+    ...shadows.primary,
+  },
+  modalNavigateText: {
+    fontSize: typography.size.body,
+    fontWeight: typography.weight.bold,
+    color: colors.white,
+    letterSpacing: 0.3,
+  },
+  modalPhoneBtn: { backgroundColor: colors.successLight, borderRadius: radius.md, padding: spacing.md, alignItems: "center", borderWidth: 1, borderColor: colors.border },
+  modalPhoneText: { fontSize: typography.size.body, fontWeight: typography.weight.bold, color: colors.success },
+  modalCloseBtn: { backgroundColor: colors.gray100, borderRadius: radius.full, paddingVertical: spacing.md, alignItems: "center" },
+  modalCloseBtnText: { fontSize: typography.size.body, fontWeight: typography.weight.semibold, color: colors.textSecondary },
 });

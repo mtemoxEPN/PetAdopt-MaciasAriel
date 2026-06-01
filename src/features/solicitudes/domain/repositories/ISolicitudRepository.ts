@@ -10,4 +10,6 @@ export interface ISolicitudRepository {
     message?:    string;
   }):                                               Promise<Solicitud>;
   updateStatus(id: string, status: SolicitudStatus): Promise<Solicitud>;
+  delete(id: string): Promise<void>;
+  getByAdoptanteAndPet(adoptanteId: string, mascotaId: string): Promise<Solicitud | null>;
 }

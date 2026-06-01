@@ -1,5 +1,6 @@
 import { useAiChat } from "@features/ai/presentation/hooks/useAiChat";
 import { AiMessage } from "@features/ai/domain/entities/AiMessage";
+import Markdown from "react-native-markdown-display";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -19,6 +20,8 @@ import {
   shadows,
   radius,
 } from "@shared/presentation/styles/theme";
+import { Bot, PawPrint, ChevronRight, ArrowUp, AlertCircle } from "lucide-react-native";
+import Animated, { FadeInUp } from "react-native-reanimated";
 
 const SUGGESTIONS = [
   "¿Qué debo darle de comer a un cachorro?",
@@ -30,6 +33,7 @@ const SUGGESTIONS = [
 export default function AiChatScreen() {
   const { messages, sendMessage, isLoading, error, clearChat } = useAiChat();
   const [input, setInput] = useState("");
+  const [isFocused, setIsFocused] = useState(false);
   const listRef = useRef<FlatList>(null);
 
   useEffect(() => {
@@ -52,10 +56,10 @@ export default function AiChatScreen() {
     ({ item }: { item: AiMessage }) => {
       const isUser = item.role === "user";
       return (
-        <View style={[styles.msgRow, isUser && styles.msgRowUser]}>
+        <Animated.View entering={FadeInUp.duration(300)} style={[styles.msgRow, isUser && styles.msgRowUser]}>
           {!isUser && (
             <View style={styles.avatar}>
-              <Text style={styles.avatarText}>🤖</Text>
+              <Bot size={18} color={colors.secondary} />
             </View>
           )}
           <View
@@ -64,14 +68,15 @@ export default function AiChatScreen() {
               isUser ? styles.bubbleUser : styles.bubbleModel,
             ]}
           >
-            <Text
-              style={[
-                styles.bubbleText,
-                isUser && styles.bubbleTextUser,
-              ]}
-            >
-              {item.content}
-            </Text>
+            {isUser ? (
+              <Text style={[styles.bubbleText, styles.bubbleTextUser]}>
+                {item.content}
+              </Text>
+            ) : (
+              <Markdown style={markdownStyles}>
+                {item.content}
+              </Markdown>
+            )}
             <Text style={[styles.time, isUser && styles.timeUser]}>
               {item.createdAt.toLocaleTimeString([], {
                 hour: "2-digit",
@@ -79,7 +84,7 @@ export default function AiChatScreen() {
               })}
             </Text>
           </View>
-        </View>
+        </Animated.View>
       );
     },
     []
@@ -88,12 +93,12 @@ export default function AiChatScreen() {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+      behavior={Platform.OS === "ios" ? "padding" : "padding"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 80}
     >
       {/* Header */}
       <View style={styles.headerBanner}>
-        <Text style={styles.headerBannerIcon}>🐾</Text>
+        <PawPrint size={28} color={colors.primary} />
         <View style={styles.headerBannerInfo}>
           <Text style={styles.headerBannerTitle}>Asistente PetAdopt</Text>
           <Text style={styles.headerBannerSub}>
@@ -126,7 +131,7 @@ export default function AiChatScreen() {
                 activeOpacity={0.7}
               >
                 <Text style={styles.suggestionText}>{s}</Text>
-                <Text style={styles.suggestionArrow}>→</Text>
+                <ChevronRight size={16} color={colors.primary} />
               </TouchableOpacity>
             ))}
           </View>
@@ -146,7 +151,7 @@ export default function AiChatScreen() {
       {isLoading && (
         <View style={styles.typingRow}>
           <View style={styles.avatar}>
-            <Text style={styles.avatarText}>🤖</Text>
+            <Bot size={18} color={colors.secondary} />
           </View>
           <View style={styles.typingBubble}>
             <ActivityIndicator size="small" color={colors.primary} />
@@ -158,14 +163,14 @@ export default function AiChatScreen() {
       {/* Error */}
       {error && (
         <View style={styles.errorBox}>
-          <Text style={styles.errorText}>⚠ {error}</Text>
+          <Text style={styles.errorText}>{error}</Text>
         </View>
       )}
 
       {/* Input */}
       <View style={styles.inputBar}>
         <TextInput
-          style={styles.input}
+          style={[styles.input, isFocused && styles.inputFocused]}
           value={input}
           onChangeText={setInput}
           placeholder="Pregunta sobre tu mascota..."
@@ -173,6 +178,8 @@ export default function AiChatScreen() {
           multiline
           maxLength={500}
           onSubmitEditing={handleSend}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
         />
         <TouchableOpacity
           style={[
@@ -183,7 +190,7 @@ export default function AiChatScreen() {
           disabled={!input.trim() || isLoading}
           activeOpacity={0.85}
         >
-          <Text style={styles.sendIcon}>↑</Text>
+          <ArrowUp size={20} color={colors.white} />
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
@@ -204,7 +211,7 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.borderLight,
     ...shadows.sm,
   },
-  headerBannerIcon: { fontSize: 36 },
+  headerBannerIcon: { fontSize: 38 },
   headerBannerInfo: { flex: 1 },
   headerBannerTitle: {
     fontSize: typography.size.body,
@@ -219,12 +226,14 @@ const styles = StyleSheet.create({
   clearBtn: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
-    backgroundColor: colors.warningLight,
+    backgroundColor: colors.primaryLight,
     borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: colors.primaryGlow,
   },
   clearBtnText: {
     fontSize: typography.size.caption,
-    color: "#92400e",
+    color: colors.primary,
     fontWeight: typography.weight.semibold,
   },
 
@@ -248,12 +257,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
+    backgroundColor: colors.background,
+    borderRadius: radius.xl,
     padding: spacing.lg,
-    borderWidth: 1.5,
+    borderWidth: 1,
     borderColor: colors.border,
-    ...shadows.sm,
   },
   suggestionText: {
     flex: 1,
@@ -275,27 +283,28 @@ const styles = StyleSheet.create({
   avatar: {
     width: 32,
     height: 32,
-    borderRadius: 16,
-    backgroundColor: colors.primaryLight,
+    borderRadius: radius.full,
+    backgroundColor: colors.secondaryLight,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#fed7aa",
+    borderColor: colors.border,
   },
   avatarText: { fontSize: 16 },
 
   bubble: {
     maxWidth: "78%",
-    borderRadius: 20,
+    borderRadius: radius.lg,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
   },
   bubbleUser: {
     backgroundColor: colors.primary,
     borderBottomRightRadius: 4,
+    ...shadows.primarySm,
   },
   bubbleModel: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.background,
     borderBottomLeftRadius: 4,
     borderWidth: 1,
     borderColor: colors.border,
@@ -325,8 +334,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
-    backgroundColor: colors.surface,
-    borderRadius: 20,
+    backgroundColor: colors.background,
+    borderRadius: radius.lg,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderWidth: 1,
@@ -354,28 +363,104 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderTopWidth: 1,
     borderTopColor: colors.borderLight,
+    paddingBottom: Platform.OS === "ios" ? 66 : 65,
   },
   input: {
     flex: 1,
-    borderWidth: 1.5,
+    borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 20,
+    borderRadius: radius.full,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     maxHeight: 100,
     fontSize: typography.size.body,
     color: colors.textPrimary,
-    backgroundColor: colors.gray100,
+    backgroundColor: colors.background,
   },
   sendBtn: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 46,
+    height: 46,
+    borderRadius: radius.full,
     backgroundColor: colors.primary,
     justifyContent: "center",
     alignItems: "center",
-    ...shadows.sm,
+    ...shadows.primary,
   },
-  sendBtnOff: { backgroundColor: colors.gray300 },
+  sendBtnOff: { backgroundColor: colors.gray300, shadowOpacity: 0 },
   sendIcon: { color: colors.white, fontSize: 20, fontWeight: "700" },
+  inputFocused: {
+    borderColor: colors.primary,
+    backgroundColor: "rgba(255,240,237,0.50)",
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 2,
+  },
 });
+
+const markdownStyles = {
+  body: {
+    fontSize: typography.size.body,
+    color: colors.textPrimary,
+    lineHeight: 22,
+  },
+  strong: {
+    fontWeight: "700" as const,
+    color: colors.textPrimary,
+  },
+  em: {
+    fontStyle: "italic" as const,
+  },
+  heading1: {
+    fontSize: typography.size.h3,
+    fontWeight: "700" as const,
+    color: colors.textPrimary,
+    marginBottom: 4,
+  },
+  heading2: {
+    fontSize: typography.size.h4,
+    fontWeight: "700" as const,
+    color: colors.textPrimary,
+    marginBottom: 4,
+  },
+  heading3: {
+    fontSize: typography.size.body,
+    fontWeight: "600" as const,
+    color: colors.textPrimary,
+    marginBottom: 4,
+  },
+  bullet_list: {
+    marginLeft: 8,
+  },
+  ordered_list: {
+    marginLeft: 8,
+  },
+  list_item: {
+    marginBottom: 4,
+  },
+  code_inline: {
+    backgroundColor: colors.gray100,
+    borderRadius: 4,
+    paddingHorizontal: 4,
+    fontFamily: 'monospace',
+    fontSize: typography.size.bodySmall,
+    color: colors.primary,
+  },
+  fence: {
+    backgroundColor: colors.gray100,
+    borderRadius: radius.sm,
+    padding: 12,
+    fontFamily: 'monospace',
+    fontSize: typography.size.bodySmall,
+    color: colors.textPrimary,
+  },
+  blockquote: {
+    backgroundColor: colors.primaryLight,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.primary,
+    paddingLeft: 12,
+    paddingVertical: 4,
+    borderRadius: 4,
+  },
+};

@@ -1,14 +1,9 @@
 import React from "react";
 import { StyleSheet, View, ViewProps } from "react-native";
-import { colors, shadows, radius } from "../styles/theme";
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-} from "react-native-reanimated";
+import { colors, radius } from "../styles/theme";
 
 interface ThemedCardProps extends ViewProps {
-  variant?: "default" | "elevated" | "outlined";
+  variant?: "default" | "elevated" | "outlined" | "glass";
   children: React.ReactNode;
   pressable?: boolean;
 }
@@ -20,67 +15,44 @@ export const ThemedCard: React.FC<ThemedCardProps> = ({
   style,
   ...props
 }) => {
-  const scale = useSharedValue(1);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
-  const handlePressIn = () => {
-    if (pressable) {
-      scale.value = withTiming(0.98, { duration: 100 });
-    }
-  };
-
-  const handlePressOut = () => {
-    if (pressable) {
-      scale.value = withTiming(1, { duration: 150 });
-    }
-  };
-
   const variantStyles = {
     default: {
-      backgroundColor: colors.surface,
-      borderColor: "transparent",
-      shadow: shadows.md,
+      backgroundColor: colors.background,
+      borderColor: colors.border,
     },
     elevated: {
-      backgroundColor: colors.surface,
-      borderColor: "transparent",
-      shadow: shadows.lg,
+      backgroundColor: colors.background,
+      borderColor: "rgba(139,110,82,0.06)",
     },
     outlined: {
-      backgroundColor: colors.surface,
+      backgroundColor: colors.background,
       borderColor: colors.border,
-      shadow: {},
+    },
+    glass: {
+      backgroundColor: colors.background,
+      borderColor: "rgba(139,110,82,0.06)",
     },
   };
 
   const vs = variantStyles[variant];
 
   return (
-    <Animated.View
+    <View
       style={[
-        animatedStyle,
         styles.base,
-        {
-          backgroundColor: vs.backgroundColor,
-          borderColor: vs.borderColor,
-          ...vs.shadow,
-        },
+        vs,
         style,
       ]}
       {...props}
     >
       {children}
-    </Animated.View>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   base: {
     borderRadius: radius.xl,
-    borderWidth: 1.5,
-    overflow: "hidden",
+    borderWidth: 1,
   },
 });

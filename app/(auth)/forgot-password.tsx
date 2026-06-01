@@ -22,6 +22,7 @@ import {
 import { supabase } from "@shared/infrastructure/supabase/client";
 import { useRouter } from "expo-router";
 import Animated, { FadeInUp, FadeIn } from "react-native-reanimated";
+import { PawPrint, Mail, ArrowLeft } from "lucide-react-native";
 
 export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState("");
@@ -71,7 +72,7 @@ export default function ForgotPasswordScreen() {
           entering={FadeInUp.duration(600)}
           style={styles.successContainer}
         >
-          <Text style={styles.successIcon}>📧</Text>
+          <Mail size={64} color={colors.white} />
           <Text style={styles.successTitle}>¡Revisa tu correo!</Text>
           <Text style={styles.successText}>
             Enviamos un enlace a{"\n"}
@@ -97,12 +98,13 @@ export default function ForgotPasswordScreen() {
         showsVerticalScrollIndicator={false}
       >
         <Animated.View entering={FadeInUp.duration(600).delay(100)} style={styles.header}>
-          <Text style={styles.logo}>🐾</Text>
+          <PawPrint size={48} color={colors.white} />
           <Text style={styles.brand}>PetAdopt</Text>
           <Text style={styles.tagline}>Recupera tu acceso</Text>
         </Animated.View>
 
         <Animated.View entering={FadeInUp.duration(600).delay(250)} style={styles.card}>
+          <View style={styles.accentBar} />
           <Text style={styles.titleLight}>Olvidé mi</Text>
           <Text style={styles.titleBold}>contraseña.</Text>
 
@@ -112,7 +114,7 @@ export default function ForgotPasswordScreen() {
 
           {error && (
             <View style={styles.errorBox}>
-              <Text style={styles.errorText}>⚠ {error}</Text>
+              <Text style={styles.errorText}>{error}</Text>
             </View>
           )}
 
@@ -138,7 +140,7 @@ export default function ForgotPasswordScreen() {
               onPress={handleSend}
               isLoading={isLoading}
             >
-              Enviar enlace 🐾
+              Enviar enlace
             </ThemedButton>
 
             <TouchableOpacity
@@ -146,13 +148,14 @@ export default function ForgotPasswordScreen() {
               onPress={() => router.back()}
               activeOpacity={0.7}
             >
-              <Text style={styles.backText}>← Volver al login</Text>
+              <ArrowLeft size={16} color={colors.primary} />
+              <Text style={styles.backText}>Volver al login</Text>
             </TouchableOpacity>
           </View>
         </Animated.View>
 
         <Animated.Text entering={FadeIn.duration(800).delay(500)} style={styles.footer}>
-          Cada mascota merece un hogar 🏠
+          Cada mascota merece un hogar
         </Animated.Text>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -160,63 +163,57 @@ export default function ForgotPasswordScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.background },
+  root: { flex: 1, backgroundColor: colors.primary },
   scroll: {
     flexGrow: 1,
     justifyContent: "center",
     paddingHorizontal: spacing["2xl"],
     paddingVertical: spacing["5xl"],
+    backgroundColor: 'transparent',
   },
-
   header: { alignItems: "center", marginBottom: spacing["2xl"] },
   logo: { fontSize: 56, marginBottom: 8 },
   brand: {
-    fontFamily: typography.fontFamily.serif,
-    fontSize: typography.size.h1,
-    fontWeight: typography.weight.bold,
-    color: colors.textPrimary,
-    letterSpacing: typography.letterSpacing.tight,
+    fontSize: typography.size.hero,
+    fontWeight: "800",
+    color: colors.white,
+    letterSpacing: -1,
+    marginTop: spacing.md,
   },
   tagline: {
-    fontFamily: typography.fontFamily.body,
-    fontSize: typography.size.bodySmall,
-    color: colors.textSecondary,
+    fontSize: typography.size.body,
+    color: colors.white,
     marginTop: spacing.xs,
   },
-
   card: {
-    backgroundColor: colors.surface,
-    borderRadius: 24,
+    backgroundColor: colors.background,
+    borderRadius: radius["2xl"],
     padding: spacing["2xl"],
-    ...shadows.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
-
   titleLight: {
-    fontFamily: typography.fontFamily.sans,
     fontSize: typography.size.h1,
     fontWeight: typography.weight.light,
     color: colors.textTertiary,
-    letterSpacing: typography.letterSpacing.tight,
+    letterSpacing: -0.3,
   },
   titleBold: {
-    fontFamily: typography.fontFamily.sans,
     fontSize: typography.size.h1,
-    fontWeight: typography.weight.bold,
+    fontWeight: "800",
     color: colors.textPrimary,
-    letterSpacing: typography.letterSpacing.tight,
-    marginTop: -4,
+    letterSpacing: -1,
+    marginTop: -6,
     marginBottom: spacing.sm,
   },
   subtitle: {
-    fontFamily: typography.fontFamily.body,
     fontSize: typography.size.bodySmall,
     color: colors.textSecondary,
     lineHeight: 22,
     marginBottom: spacing.lg,
   },
-
   errorBox: {
-    backgroundColor: colors.errorLight,
+    backgroundColor: "rgba(255,255,255,0.6)",
     borderRadius: radius.lg,
     padding: spacing.md,
     marginBottom: spacing.md,
@@ -224,38 +221,42 @@ const styles = StyleSheet.create({
     borderLeftColor: colors.error,
   },
   errorText: { color: colors.error, fontSize: typography.size.caption },
-
   form: { gap: spacing.md },
-
-  backLink: { alignItems: "center", paddingVertical: spacing.sm },
-  backText: { color: colors.textSecondary, fontSize: typography.size.bodySmall },
-
+  backLink: { alignItems: "center", paddingVertical: spacing.sm, flexDirection: "row", justifyContent: "center", gap: spacing.xs },
+  backText: { color: colors.primary, fontSize: typography.size.bodySmall },
   footer: {
     textAlign: "center",
     marginTop: spacing["2xl"],
     fontSize: typography.size.caption,
-    color: colors.textTertiary,
+    color: colors.white,
   },
-
   successContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     padding: spacing["3xl"],
     gap: spacing.md,
-    backgroundColor: colors.background,
+    backgroundColor: 'transparent',
   },
   successIcon: { fontSize: 64 },
   successTitle: {
     fontSize: typography.size.h2,
-    fontWeight: typography.weight.bold,
-    color: colors.textPrimary,
+    fontWeight: "800",
+    color: colors.white,
+    letterSpacing: -0.3,
   },
   successText: {
     fontSize: typography.size.body,
-    color: colors.textSecondary,
+    color: colors.white,
     textAlign: "center",
-    lineHeight: 24,
+    lineHeight: 26,
   },
   successEmail: { color: colors.primary, fontWeight: typography.weight.semibold },
+  accentBar: {
+    height: 4,
+    width: 48,
+    backgroundColor: colors.primary,
+    borderRadius: radius.full,
+    marginBottom: spacing.md,
+  },
 });

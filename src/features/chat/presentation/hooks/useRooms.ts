@@ -2,7 +2,9 @@ import { useAuthStore } from "@features/auth/presentation/store/authStore";
 import { CreateRoomUseCase } from "@features/chat/application/use-cases/CreateRoomUseCase";
 import { Room } from "@features/chat/domain/entities/Message";
 import { SupabaseChatRepository } from "@features/chat/infrastructure/repositories/SupabaseChatRepository";
+import { supabase } from "@shared/infrastructure/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 
 const chatRepo = new SupabaseChatRepository();
 const createRoomUseCase = new CreateRoomUseCase(chatRepo);
@@ -21,6 +23,25 @@ export function useRooms() {
     queryFn: () => chatRepo.getRooms(),
     enabled: !!user, // Solo fetchar si hay usuario autenticado
   });
+
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('rooms:all')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'rooms' },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['rooms'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id]);
 
   // useMutation para crear una sala nueva
   const createMutation = useMutation({

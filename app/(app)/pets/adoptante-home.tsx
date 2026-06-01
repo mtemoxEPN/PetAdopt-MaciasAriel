@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { useState, useCallback, useMemo } from "react";
 import LottieView from "lottie-react-native";
+import { PawPrint, ChevronRight, Search } from "lucide-react-native";
 import Animated, { FadeInUp } from "react-native-reanimated";
 import {
   colors,
@@ -52,13 +53,7 @@ export default function AdoptanteHomeScreen() {
               <Image source={{ uri: item.photoUrl }} style={styles.photo} />
             ) : (
               <View style={styles.photoPlaceholder}>
-                <Text style={styles.photoEmoji}>
-                  {item.species === "perro"
-                    ? "🐶"
-                    : item.species === "gato"
-                    ? "🐱"
-                    : "🐾"}
-                </Text>
+                <PawPrint size={40} color={colors.primary} />
               </View>
             )}
             <View style={styles.info}>
@@ -76,7 +71,7 @@ export default function AdoptanteHomeScreen() {
                 {item.gender ? ` · ${item.gender}` : ""}
               </Text>
             </View>
-            <Text style={styles.chevron}>›</Text>
+            <ChevronRight size={20} color={colors.textTertiary} />
           </TouchableOpacity>
         </ThemedCard>
       </Animated.View>
@@ -96,6 +91,7 @@ export default function AdoptanteHomeScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
+        <View style={styles.headerAccent} />
         <Text style={styles.headerTitle}>Explorar Mascotas</Text>
         <Text style={styles.headerSubtitle}>
           Encuentra a tu nuevo mejor amigo
@@ -103,7 +99,7 @@ export default function AdoptanteHomeScreen() {
       </View>
 
       <View style={styles.searchBar}>
-        <Text style={styles.searchIcon}>🔍</Text>
+        <Search size={16} color={colors.textTertiary} />
         <TextInput
           style={styles.searchInput}
           placeholder="Buscar por nombre, especie o raza..."
@@ -120,7 +116,7 @@ export default function AdoptanteHomeScreen() {
         contentContainerStyle={
           filtered.length === 0
             ? { flex: 1 }
-            : { paddingBottom: spacing["2xl"], paddingHorizontal: spacing.lg }
+            : { paddingBottom: 120, paddingHorizontal: spacing.lg }
         }
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
@@ -145,43 +141,45 @@ export default function AdoptanteHomeScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   centered: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    gap: spacing.sm,
+    flex: 1, justifyContent: "center",
+    alignItems: "center", gap: spacing.sm,
   },
   loadingText: { color: colors.textTertiary, marginTop: spacing.sm },
-
   header: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing["2xl"],
     paddingBottom: spacing.md,
   },
+  headerAccent: {
+    width: 36,
+    height: 4,
+    backgroundColor: colors.primary,
+    borderRadius: radius.full,
+    marginBottom: spacing.sm,
+  },
   headerTitle: {
-    fontFamily: typography.fontFamily.serif,
     fontSize: typography.size.h2,
-    fontWeight: typography.weight.bold,
+    fontWeight: typography.weight.extrabold,
     color: colors.textPrimary,
+    letterSpacing: typography.letterSpacing.tight,
   },
   headerSubtitle: {
-    fontFamily: typography.fontFamily.body,
     fontSize: typography.size.bodySmall,
     color: colors.textSecondary,
     marginTop: spacing.xs,
   },
-
   searchBar: {
     flexDirection: "row",
     alignItems: "center",
     marginHorizontal: spacing.lg,
     marginBottom: spacing.md,
     paddingHorizontal: spacing.lg,
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    borderWidth: 1.5,
-    borderColor: colors.border,
+    backgroundColor: "rgba(255,255,255,0.75)",
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
     gap: spacing.sm,
-    ...shadows.sm,
+    ...shadows.glass,
   },
   searchIcon: { fontSize: 16 },
   searchInput: {
@@ -189,29 +187,29 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     fontSize: typography.size.bodySmall,
     color: colors.textPrimary,
-    fontFamily: typography.fontFamily.sans,
   },
-
   card: {
     marginHorizontal: spacing.lg,
     marginBottom: spacing.md,
+    backgroundColor: colors.background,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
   },
   cardInner: {
     flexDirection: "row",
     alignItems: "center",
-    padding: spacing.md,
-    gap: spacing.md,
+    padding: spacing.lg,
+    gap: spacing.lg,
   },
-  photo: { width: 72, height: 72, borderRadius: radius.md },
+  photo: { width: 90, height: 90, borderRadius: radius.xl },
   photoPlaceholder: {
-    width: 72,
-    height: 72,
-    borderRadius: radius.md,
-    backgroundColor: colors.warningLight,
-    justifyContent: "center",
-    alignItems: "center",
+    width: 90, height: 90,
+    borderRadius: radius.xl,
+    backgroundColor: colors.primaryLight,
+    justifyContent: "center", alignItems: "center",
   },
-  photoEmoji: { fontSize: 32 },
+  photoEmoji: { fontSize: 40 },
   info: { flex: 1, gap: spacing.xs },
   row: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   name: {
@@ -222,20 +220,19 @@ const styles = StyleSheet.create({
   speciesBadge: {
     backgroundColor: colors.primaryLight,
     paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
+    paddingVertical: 3,
     borderRadius: radius.full,
     borderWidth: 1,
-    borderColor: "#fed7aa",
+    borderColor: "rgba(229,77,46,0.18)",
   },
   speciesText: {
     fontSize: 11,
     color: colors.primary,
-    fontWeight: typography.weight.semibold,
+    fontWeight: typography.weight.bold,
   },
   breed: { fontSize: 13, color: colors.textSecondary },
   age: { fontSize: 13, color: colors.textTertiary },
   chevron: { fontSize: 22, color: colors.gray300 },
-
   emptyTitle: {
     fontSize: typography.size.h4,
     fontWeight: typography.weight.semibold,
@@ -244,5 +241,6 @@ const styles = StyleSheet.create({
   emptySubtitle: {
     fontSize: typography.size.bodySmall,
     color: colors.textTertiary,
+    textAlign: "center",
   },
 });

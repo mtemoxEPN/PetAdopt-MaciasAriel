@@ -11,6 +11,7 @@ import {
   View,
 } from "react-native";
 import { useCallback } from "react";
+import { MessageCircle, ChevronRight } from "lucide-react-native";
 import Animated, { FadeInUp } from "react-native-reanimated";
 import {
   colors,
@@ -36,7 +37,7 @@ export default function ChatsScreen() {
             onPress={() => router.push(`/(app)/chat/${item.id}`)}
           >
             <View style={styles.avatar}>
-              <Text style={styles.avatarText}>💬</Text>
+              <MessageCircle size={20} color={colors.secondary} />
             </View>
             <View style={styles.info}>
               <Text style={styles.roomName}>{item.name}</Text>
@@ -48,7 +49,7 @@ export default function ChatsScreen() {
                 })}
               </Text>
             </View>
-            <Text style={styles.chevron}>›</Text>
+            <ChevronRight size={20} color={colors.textTertiary} />
           </TouchableOpacity>
         </ThemedCard>
       </Animated.View>
@@ -67,6 +68,7 @@ export default function ChatsScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
+        <View style={styles.headerAccent} />
         <Text style={styles.headerTitle}>Chats</Text>
         <Text style={styles.headerSubtitle}>
           Conversaciones con refugios y adoptantes
@@ -80,12 +82,12 @@ export default function ChatsScreen() {
         contentContainerStyle={
           rooms.length === 0
             ? { flex: 1 }
-            : { paddingBottom: spacing["2xl"], paddingHorizontal: spacing.lg }
+            : { paddingBottom: 120, paddingHorizontal: spacing.lg }
         }
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <View style={styles.centered}>
-            <Text style={styles.emptyIcon}>💬</Text>
+            <MessageCircle size={48} color={colors.textTertiary} />
             <Text style={styles.emptyTitle}>No hay chats aún</Text>
             <Text style={styles.emptySubtitle}>
               Los chats aparecen cuando un refugio inicia una conversación contigo
@@ -111,14 +113,20 @@ const styles = StyleSheet.create({
     paddingTop: spacing["2xl"],
     paddingBottom: spacing.md,
   },
+  headerAccent: {
+    width: 36,
+    height: 4,
+    backgroundColor: colors.primary,
+    borderRadius: radius.full,
+    marginBottom: spacing.sm,
+  },
   headerTitle: {
-    fontFamily: typography.fontFamily.serif,
     fontSize: typography.size.h2,
-    fontWeight: typography.weight.bold,
+    fontWeight: typography.weight.extrabold,
     color: colors.textPrimary,
+    letterSpacing: typography.letterSpacing.tight,
   },
   headerSubtitle: {
-    fontFamily: typography.fontFamily.body,
     fontSize: typography.size.bodySmall,
     color: colors.textSecondary,
     marginTop: spacing.xs,
@@ -126,6 +134,7 @@ const styles = StyleSheet.create({
   card: {
     marginHorizontal: spacing.lg,
     marginBottom: spacing.md,
+    backgroundColor: colors.background,
   },
   cardInner: {
     flexDirection: "row",
@@ -134,14 +143,14 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: radius.md,
-    backgroundColor: colors.primaryLight,
+    width: 52,
+    height: 52,
+    borderRadius: radius.lg,
+    backgroundColor: colors.secondaryLight,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#fed7aa",
+    borderColor: colors.border,
   },
   avatarText: { fontSize: 22 },
   info: { flex: 1, gap: spacing.xs },

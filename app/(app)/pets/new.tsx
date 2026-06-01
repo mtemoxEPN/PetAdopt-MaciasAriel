@@ -1,12 +1,15 @@
+import { colors, spacing, typography, shadows, radius } from "@shared/presentation/styles/theme";
 import { useRefugioPets } from '@features/pets/presentation/hooks/usePets';
 import { useAuthStore } from '@features/auth/presentation/store/authStore';
 import { pickAndUploadPetImage } from '@shared/infrastructure/supabase/StorageService';
-import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useState } from 'react';
 import {
-  ActivityIndicator, Alert, Image, ScrollView, StyleSheet,
-  Text, TextInput, TouchableOpacity, View,
+  ActivityIndicator, Alert, Image, KeyboardAvoidingView,
+  Platform, ScrollView, StyleSheet, Text, TextInput,
+  TouchableOpacity, View,
 } from 'react-native';
+import { PawPrint, Camera, Mars, Venus } from 'lucide-react-native';
 import { PetSpecies, PetGender, PetStatus } from '@features/pets/domain/entities/Pet';
 
 export default function NewPetScreen() {
@@ -22,6 +25,19 @@ export default function NewPetScreen() {
   const [description, setDescription] = useState('');
   const [photoUrl, setPhotoUrl]     = useState<string | null>(null);
   const [uploading, setUploading]   = useState(false);
+  const [focusedField, setFocusedField] = useState<string | null>(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      setName('');
+      setSpecies('perro');
+      setBreed('');
+      setAgeYears('');
+      setGender('macho');
+      setDescription('');
+      setPhotoUrl(null);
+    }, [])
+  );
 
   const handlePickImage = async () => {
     try {
@@ -54,7 +70,16 @@ export default function NewPetScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 80}
+    >
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={[styles.content, { paddingBottom: 120 }]}
+      keyboardShouldPersistTaps="handled"
+    >
       <Text style={styles.title}>Nueva Mascota</Text>
 
       {/* Foto */}
@@ -65,7 +90,7 @@ export default function NewPetScreen() {
           <Image source={{ uri: photoUrl }} style={styles.photoPreview} />
         ) : (
           <View style={styles.photoEmpty}>
-            <Text style={styles.photoEmptyIcon}>📷</Text>
+            <Camera size={36} color={colors.primary} />
             <Text style={styles.photoEmptyText}>Agregar foto</Text>
           </View>
         )}
@@ -73,7 +98,7 @@ export default function NewPetScreen() {
 
       {/* Nombre */}
       <Text style={styles.label}>NOMBRE *</Text>
-      <TextInput style={styles.input} placeholder="Ej: Max" value={name} onChangeText={setName} />
+      <TextInput style={[styles.input, focusedField === "name" && styles.inputFocused]} placeholder="Ej: Max" value={name} onChangeText={setName} onFocus={() => setFocusedField("name")} onBlur={() => setFocusedField(null)} />
 
       {/* Especie */}
       <Text style={styles.label}>ESPECIE</Text>
@@ -84,7 +109,7 @@ export default function NewPetScreen() {
             style={[styles.option, species === s && styles.optionActive]}
             onPress={() => setSpecies(s)}
           >
-            <Text style={styles.optionText}>{s === 'perro' ? '🐶' : s === 'gato' ? '🐱' : '🐾'} {s}</Text>
+            <Text style={styles.optionText}>{s}</Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -98,30 +123,32 @@ export default function NewPetScreen() {
             style={[styles.option, gender === g && styles.optionActive]}
             onPress={() => setGender(g)}
           >
-            <Text style={styles.optionText}>{g === 'macho' ? '♂️' : '♀️'} {g}</Text>
+            <Text style={styles.optionText}>{g}</Text>
           </TouchableOpacity>
         ))}
       </View>
 
       {/* Raza */}
       <Text style={styles.label}>RAZA (opcional)</Text>
-      <TextInput style={styles.input} placeholder="Ej: Labrador" value={breed} onChangeText={setBreed} />
+      <TextInput style={[styles.input, focusedField === "breed" && styles.inputFocused]} placeholder="Ej: Labrador" value={breed} onChangeText={setBreed} onFocus={() => setFocusedField("breed")} onBlur={() => setFocusedField(null)} />
 
       {/* Edad */}
       <Text style={styles.label}>EDAD EN AÑOS (opcional)</Text>
       <TextInput
-        style={styles.input} placeholder="Ej: 2"
+        style={[styles.input, focusedField === "ageYears" && styles.inputFocused]} placeholder="Ej: 2"
         value={ageYears} onChangeText={setAgeYears}
         keyboardType="numeric" maxLength={2}
+        onFocus={() => setFocusedField("ageYears")} onBlur={() => setFocusedField(null)}
       />
 
       {/* Descripción */}
       <Text style={styles.label}>DESCRIPCIÓN (opcional)</Text>
       <TextInput
-        style={[styles.input, styles.textarea]}
+        style={[styles.input, styles.textarea, focusedField === "description" && styles.inputFocused]}
         placeholder="Cuéntanos sobre esta mascota..."
         value={description} onChangeText={setDescription}
         multiline numberOfLines={4} maxLength={300}
+        onFocus={() => setFocusedField("description")} onBlur={() => setFocusedField(null)}
       />
 
       <TouchableOpacity
@@ -135,45 +162,92 @@ export default function NewPetScreen() {
         }
       </TouchableOpacity>
     </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fef7f0' },
-  content:   { padding: 24, gap: 10 },
-  title:     { fontSize: 24, fontWeight: '700', color: '#1c1917', marginBottom: 8 },
-
-  photoBtn:      { alignSelf: 'center', marginBottom: 8 },
-  photoPreview:  { width: 140, height: 140, borderRadius: 20 },
+  container: { flex: 1, backgroundColor: colors.background },
+  content: { padding: spacing["2xl"], gap: spacing.md },
+  centered: { flex: 1, justifyContent: "center", alignItems: "center" },
+  title: {
+    fontSize: typography.size.h2,
+    fontWeight: typography.weight.extrabold,
+    color: colors.textPrimary,
+    letterSpacing: typography.letterSpacing.tight,
+    marginBottom: spacing.sm,
+  },
+  photoBtn: { alignSelf: "center", marginBottom: spacing.sm },
+  photoPreview: { width: 160, height: 160, borderRadius: radius.xl },
   photoEmpty: {
-    width: 140, height: 140, borderRadius: 20,
-    backgroundColor: '#fff', borderWidth: 2, borderColor: '#fed7aa',
-    borderStyle: 'dashed', justifyContent: 'center', alignItems: 'center', gap: 8,
+    width: 160, height: 160,
+    borderRadius: radius.xl,
+    backgroundColor: colors.primaryLight,
+    borderWidth: 1, borderColor: colors.borderLight,
+    borderStyle: "dashed",
+    justifyContent: "center", alignItems: "center", gap: spacing.sm,
   },
-  photoEmptyIcon: { fontSize: 32 },
-  photoEmptyText: { fontSize: 13, color: '#f97316', fontWeight: '600' },
-
-  label: { fontSize: 10, fontWeight: '700', color: '#78716c', letterSpacing: 2, marginTop: 6 },
+  photoEmptyIcon: { fontSize: 36 },
+  photoEmptyText: {
+    fontSize: 13, color: colors.primary,
+    fontWeight: typography.weight.semibold,
+  },
+  label: {
+    fontSize: typography.size.overline,
+    fontWeight: typography.weight.bold,
+    color: colors.textSecondary,
+    letterSpacing: 2, marginTop: spacing.sm,
+  },
   input: {
-    borderWidth: 1.5, borderColor: '#e7e5e4', borderRadius: 14,
-    paddingHorizontal: 16, paddingVertical: 13,
-    fontSize: 15, color: '#1c1917', backgroundColor: '#fff',
+    borderWidth: 1, borderColor: colors.borderLight,
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.lg, paddingVertical: 14,
+    fontSize: typography.size.body,
+    color: colors.textPrimary,
+    backgroundColor: "transparent",
   },
-  textarea: { height: 100, textAlignVertical: 'top' },
-
-  optionRow: { flexDirection: 'row', gap: 10 },
+  textarea: { height: 110, textAlignVertical: "top", borderRadius: radius.xl },
+  optionRow: { flexDirection: "row", gap: spacing.sm },
   option: {
-    flex: 1, paddingVertical: 10, borderRadius: 12,
-    borderWidth: 1.5, borderColor: '#e7e5e4',
-    backgroundColor: '#fff', alignItems: 'center',
+    flex: 1, paddingVertical: 12,
+    borderRadius: radius.full,
+    borderWidth: 1, borderColor: colors.borderLight,
+    backgroundColor: "rgba(255,255,255,0.75)",
+    alignItems: "center",
+    ...shadows.glass,
   },
-  optionActive: { borderColor: '#f97316', backgroundColor: '#fff7ed' },
-  optionText:   { fontSize: 13, fontWeight: '600', color: '#1c1917' },
-
+  optionActive: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryLight,
+    ...shadows.primarySm,
+  },
+  optionText: {
+    fontSize: 13,
+    fontWeight: typography.weight.semibold,
+    color: colors.textPrimary,
+  },
   btnCreate: {
-    backgroundColor: '#f97316', borderRadius: 100,
-    paddingVertical: 16, alignItems: 'center', marginTop: 12,
+    backgroundColor: colors.primary,
+    borderRadius: radius.full,
+    paddingVertical: 17,
+    alignItems: "center",
+    marginTop: spacing.md,
+    ...shadows.primary,
   },
-  btnDisabled:    { opacity: 0.6 },
-  btnCreateText:  { color: '#fff', fontWeight: '700', fontSize: 16 },
+  btnDisabled: { opacity: 0.55 },
+  btnCreateText: {
+    color: colors.white,
+    fontWeight: typography.weight.bold,
+    fontSize: 16,
+    letterSpacing: 0.3,
+  },
+  inputFocused: {
+    borderColor: colors.primary,
+    backgroundColor: "rgba(255,240,237,0.50)",
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 2,
+  },
 });

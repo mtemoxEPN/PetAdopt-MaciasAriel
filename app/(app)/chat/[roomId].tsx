@@ -1,3 +1,4 @@
+import { colors, spacing, typography, shadows, radius } from "@shared/presentation/styles/theme";
 import { useAuthStore } from "@features/auth/presentation/store/authStore";
 import { Message } from "@features/chat/domain/entities/Message";
 import { useChat } from "@features/chat/presentation/hooks/useChat";
@@ -17,12 +18,15 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { Building2, Home, Plus, ArrowUp } from "lucide-react-native";
+import Animated, { FadeInUp } from "react-native-reanimated";
 
 export default function ChatScreen() {
   const { roomId } = useLocalSearchParams<{ roomId: string }>();
   const { messages, sendMessage, isLoading } = useChat(roomId);
   const user = useAuthStore((s) => s.user);
   const [input, setInput] = useState("");
+  const [isFocused, setIsFocused] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const listRef = useRef<FlatList>(null);
 
@@ -58,7 +62,7 @@ export default function ChatScreen() {
     ({ item }: { item: Message }) => {
       const isOwn = item.userId === user?.id;
       return (
-        <View style={[styles.row, isOwn && styles.rowOwn]}>
+        <Animated.View entering={FadeInUp.duration(300)} style={[styles.row, isOwn && styles.rowOwn]}>
           {!isOwn && (
             <View
               style={[
@@ -69,7 +73,7 @@ export default function ChatScreen() {
               ]}
             >
               <Text style={styles.avatarText}>
-                {item.authorRole === "seller" ? "🏥" : "🏠"}
+                {item.authorRole === "seller" ? <Building2 size={16} color={colors.primary} /> : <Home size={16} color={colors.secondary} />}
               </Text>
             </View>
           )}
@@ -107,7 +111,7 @@ export default function ChatScreen() {
               })}
             </Text>
           </View>
-        </View>
+        </Animated.View>
       );
     },
     [user?.id]
@@ -124,8 +128,8 @@ export default function ChatScreen() {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+      behavior={Platform.OS === "ios" ? "padding" : "padding"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 80}
     >
       <FlatList
         ref={listRef}
@@ -147,18 +151,20 @@ export default function ChatScreen() {
           {isUploading ? (
             <ActivityIndicator size="small" color="#78716c" />
           ) : (
-            <Text style={styles.attachIcon}>⊕</Text>
+            <Plus size={20} color={colors.textSecondary} />
           )}
         </TouchableOpacity>
 
         <TextInput
-          style={styles.input}
+          style={[styles.input, isFocused && styles.inputFocused]}
           value={input}
           onChangeText={setInput}
           placeholder="Escribe un mensaje..."
           placeholderTextColor="#a8a29e"
           multiline
           maxLength={500}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
         />
 
         <TouchableOpacity
@@ -167,123 +173,131 @@ export default function ChatScreen() {
           disabled={!input.trim()}
           activeOpacity={0.85}
         >
-          <Text style={styles.sendIcon}>↑</Text>
+          <ArrowUp size={20} color={colors.white} />
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
   );
 }
 
-const PRIMARY = "#f97316";
-const DARK = "#1c1917";
-const GRAY_MID = "#78716c";
-const GRAY_LIGHT = "#a8a29e";
-const GRAY_200 = "#e7e5e4";
-
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fafaf9" },
+  container: { flex: 1, backgroundColor: colors.background },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#fafaf9",
+    backgroundColor: colors.background,
   },
   messagesList: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 8,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    gap: spacing.sm,
   },
 
-  row: { flexDirection: "row", alignItems: "flex-end", gap: 8 },
+  row: { flexDirection: "row", alignItems: "flex-end", gap: spacing.sm },
   rowOwn: { justifyContent: "flex-end" },
 
   avatar: {
     width: 32,
     height: 32,
-    borderRadius: 10,
-    backgroundColor: "#f5f5f4",
+    borderRadius: radius.full,
+    backgroundColor: colors.secondaryLight,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 2,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
-  avatarText: { fontSize: 13, fontWeight: "600" },
-  avatarRefugio: { backgroundColor: "#fff7ed" },
-  avatarAdoptante: { backgroundColor: "#f0fdf4" },
+  avatarText: { fontSize: 13, fontWeight: typography.weight.semibold },
+  avatarRefugio: { backgroundColor: colors.primaryLight },
+  avatarAdoptante: { backgroundColor: colors.surfacePearl },
 
   bubble: {
     maxWidth: "75%",
-    borderRadius: 18,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    borderRadius: radius.lg,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
   },
   ownBubble: {
-    backgroundColor: PRIMARY,
+    backgroundColor: colors.primary,
     borderBottomRightRadius: 4,
+    ...shadows.primarySm,
   },
   otherBubble: {
-    backgroundColor: "#fff",
+    backgroundColor: colors.background,
     borderBottomLeftRadius: 4,
     borderWidth: 1,
-    borderColor: GRAY_200,
+    borderColor: colors.border,
   },
 
   author: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: GRAY_LIGHT,
-    marginBottom: 4,
+    fontSize: typography.size.caption,
+    fontWeight: typography.weight.semibold,
+    color: colors.textTertiary,
+    marginBottom: spacing.xs,
     letterSpacing: 0.3,
   },
-  msgText: { fontSize: 15, color: DARK, lineHeight: 20 },
-  msgTextOwn: { color: "#fff" },
-  time: { fontSize: 10, color: GRAY_LIGHT, marginTop: 4, alignSelf: "flex-end" },
+  msgText: { fontSize: typography.size.body, color: colors.textPrimary, lineHeight: 20 },
+  msgTextOwn: { color: colors.white },
+  time: { fontSize: 10, color: colors.textTertiary, marginTop: spacing.xs, alignSelf: "flex-end" },
   timeOwn: { color: "rgba(255,255,255,0.7)" },
   msgImage: {
     width: 200,
     height: 150,
-    borderRadius: 10,
-    marginBottom: 4,
+    borderRadius: radius.sm,
+    marginBottom: spacing.xs,
   },
 
   inputBar: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    backgroundColor: "#fff",
+    paddingHorizontal: spacing.md,
+    paddingVertical: 100,
+    backgroundColor: colors.surface,
     borderTopWidth: 1,
-    borderTopColor: GRAY_200,
-    gap: 8,
+    borderTopColor: colors.borderLight,
+    gap: spacing.sm,
+    // paddingTop: 10
   },
   attachBtn: {
     width: 36,
     height: 36,
-    borderRadius: 18,
-    backgroundColor: "#f5f5f4",
+    borderRadius: radius.full,
+    backgroundColor: colors.gray100,
     justifyContent: "center",
     alignItems: "center",
   },
-  attachIcon: { fontSize: 20, color: GRAY_MID },
+  attachIcon: { fontSize: 20, color: colors.textSecondary },
   input: {
     flex: 1,
     borderWidth: 1,
-    borderColor: GRAY_200,
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    borderColor: colors.border,
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
     maxHeight: 100,
-    fontSize: 15,
-    color: DARK,
-    backgroundColor: "#fafaf9",
+    fontSize: typography.size.body,
+    color: colors.textPrimary,
+    backgroundColor: colors.background,
   },
   sendBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: PRIMARY,
+    width: 40,
+    height: 40,
+    borderRadius: radius.full,
+    backgroundColor: colors.primary,
     justifyContent: "center",
     alignItems: "center",
+    ...shadows.primary,
   },
-  sendBtnOff: { backgroundColor: "#e7e5e4" },
-  sendIcon: { color: "#fff", fontSize: 18, fontWeight: "600" },
+  sendBtnOff: { backgroundColor: colors.gray300 },
+  sendIcon: { color: colors.white, fontSize: 18, fontWeight: typography.weight.semibold },
+  inputFocused: {
+    borderColor: colors.primary,
+    backgroundColor: "rgba(255,240,237,0.50)",
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 2,
+  },
 });

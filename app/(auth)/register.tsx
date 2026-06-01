@@ -24,12 +24,14 @@ import {
   Modal,
 } from "react-native";
 import Animated, { FadeInUp } from "react-native-reanimated";
+import { PawPrint, Home, Building2, Mail, MapPin, Eye, EyeOff } from "lucide-react-native";
 import { WebView } from "react-native-webview";
 
 export default function RegisterScreen() {
   const [emailSent, setEmailSent] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [username, setUsername] = useState("");
   const [fullName, setFullName] = useState("");
   const [role, setRole] = useState<"adoptante" | "refugio">("adoptante");
@@ -95,7 +97,7 @@ export default function RegisterScreen() {
     return (
       <View style={styles.root}>
         <Animated.View entering={FadeInUp.duration(600)} style={styles.successContainer}>
-          <Text style={styles.successIcon}>✉️</Text>
+          <Mail size={64} color={colors.white} />
           <Text style={styles.successTitle}>¡Revisa tu correo!</Text>
           <Text style={styles.successText}>
             Enviamos un enlace de verificación a{"\n"}
@@ -120,12 +122,13 @@ export default function RegisterScreen() {
         showsVerticalScrollIndicator={false}
       >
         <Animated.View entering={FadeInUp.duration(600).delay(100)} style={styles.header}>
-          <Text style={styles.logo}>🐾</Text>
+          <PawPrint size={48} color={colors.white} />
           <Text style={styles.brand}>PetAdopt</Text>
           <Text style={styles.tagline}>Únete y ayuda a los animales</Text>
         </Animated.View>
 
         <Animated.View entering={FadeInUp.duration(600).delay(250)} style={styles.card}>
+          <View style={styles.accentBar} />
           <Text style={styles.titleLight}>Crear</Text>
           <Text style={styles.titleBold}>cuenta.</Text>
 
@@ -138,7 +141,7 @@ export default function RegisterScreen() {
               ]}
               onPress={() => setRole("adoptante")}
             >
-              <Text style={styles.roleIcon}>🏠</Text>
+              <Home size={32} color={role === "adoptante" ? colors.primary : colors.textTertiary} />
               <Text
                 style={[
                   styles.roleLabel,
@@ -155,7 +158,7 @@ export default function RegisterScreen() {
               ]}
               onPress={() => setRole("refugio")}
             >
-              <Text style={styles.roleIcon}>🏥</Text>
+              <Building2 size={32} color={role === "refugio" ? colors.primary : colors.textTertiary} />
               <Text
                 style={[
                   styles.roleLabel,
@@ -169,7 +172,7 @@ export default function RegisterScreen() {
 
           {error && (
             <View style={styles.errorBox}>
-              <Text style={styles.errorText}>⚠ {error}</Text>
+              <Text style={styles.errorText}>{error}</Text>
             </View>
           )}
 
@@ -221,9 +224,14 @@ export default function RegisterScreen() {
                 setPassword(text);
                 if (errors.password) setErrors((prev) => ({ ...prev, password: "" }));
               }}
-              secureTextEntry
+              secureTextEntry={!showPassword}
               error={errors.password}
               required
+              rightIcon={
+                <TouchableOpacity onPress={() => setShowPassword(!showPassword)} activeOpacity={0.7}>
+                  {showPassword ? <EyeOff size={20} color={colors.textTertiary} /> : <Eye size={20} color={colors.textTertiary} />}
+                </TouchableOpacity>
+              }
             />
 
             {role === "refugio" && (
@@ -245,8 +253,8 @@ export default function RegisterScreen() {
                   >
                     <Text style={styles.mapBtnText}>
                       {lat && lng
-                        ? "📍 Ubicación seleccionada"
-                        : "🗺️ Toca para elegir en el mapa"}
+                        ? "Ubicación seleccionada"
+                        : "Toca para elegir en el mapa"}
                     </Text>
                   </TouchableOpacity>
                   {errors.location && (
@@ -287,7 +295,7 @@ export default function RegisterScreen() {
               </Text>
               {isFetchingAddress && (
                 <Text style={{ fontSize: 12, color: colors.primary }}>
-                  📍 Buscando dirección...
+                  Buscando dirección...
                 </Text>
               )}
             </View>
@@ -349,48 +357,47 @@ export default function RegisterScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.background },
+  root: { flex: 1, backgroundColor: colors.primary },
   scroll: {
     flexGrow: 1,
     justifyContent: "center",
     paddingHorizontal: spacing["2xl"],
     paddingVertical: spacing["4xl"],
+    backgroundColor: 'transparent',
   },
   header: { alignItems: "center", marginBottom: spacing["2xl"] },
   logo: { fontSize: 56, marginBottom: 8 },
   brand: {
-    fontFamily: typography.fontFamily.serif,
-    fontSize: typography.size.h1,
-    fontWeight: typography.weight.bold,
-    color: colors.textPrimary,
-    letterSpacing: typography.letterSpacing.tight,
+    fontSize: typography.size.hero,
+    fontWeight: "800",
+    color: colors.white,
+    letterSpacing: -1,
+    marginTop: spacing.md,
   },
   tagline: {
-    fontFamily: typography.fontFamily.body,
-    fontSize: typography.size.bodySmall,
-    color: colors.textSecondary,
+    fontSize: typography.size.body,
+    color: colors.white,
     marginTop: spacing.xs,
   },
   card: {
-    backgroundColor: colors.surface,
-    borderRadius: 24,
+    backgroundColor: colors.background,
+    borderRadius: radius["2xl"],
     padding: spacing["2xl"],
-    ...shadows.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   titleLight: {
-    fontFamily: typography.fontFamily.sans,
     fontSize: typography.size.h1,
     fontWeight: typography.weight.light,
     color: colors.textTertiary,
-    letterSpacing: typography.letterSpacing.tight,
+    letterSpacing: -0.3,
   },
   titleBold: {
-    fontFamily: typography.fontFamily.sans,
     fontSize: typography.size.h1,
-    fontWeight: typography.weight.bold,
+    fontWeight: "800",
     color: colors.textPrimary,
-    letterSpacing: typography.letterSpacing.tight,
-    marginTop: -4,
+    letterSpacing: -1,
+    marginTop: -6,
     marginBottom: spacing.lg,
   },
   sectionLabel: {
@@ -404,27 +411,27 @@ const styles = StyleSheet.create({
   roleRow: { flexDirection: "row", gap: spacing.md, marginBottom: spacing.md },
   roleBtn: {
     flex: 1,
-    borderRadius: radius.lg,
+    borderRadius: radius.xl,
     padding: spacing.md,
     alignItems: "center",
-    borderWidth: 1.5,
+    borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: colors.gray100,
+    backgroundColor: "rgba(255,255,255,0.75)",
+    gap: spacing.xs,
   },
   roleBtnActive: {
     borderColor: colors.primary,
     backgroundColor: colors.primaryLight,
   },
-  roleIcon: { fontSize: 28, marginBottom: 4 },
+  roleIcon: { fontSize: 32, marginBottom: 4 },
   roleLabel: {
     fontSize: typography.size.bodySmall,
     fontWeight: typography.weight.semibold,
     color: colors.textTertiary,
   },
   roleLabelActive: { color: colors.primary },
-
   errorBox: {
-    backgroundColor: colors.errorLight,
+    backgroundColor: "rgba(255,255,255,0.6)",
     borderRadius: radius.lg,
     padding: spacing.md,
     marginBottom: spacing.md,
@@ -432,9 +439,7 @@ const styles = StyleSheet.create({
     borderLeftColor: colors.error,
   },
   errorText: { color: colors.error, fontSize: typography.size.caption },
-
   form: { gap: spacing.md },
-
   mapLabel: {
     fontSize: typography.size.overline,
     fontWeight: typography.weight.bold,
@@ -450,11 +455,11 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
-    backgroundColor: colors.surface,
+    backgroundColor: "rgba(255,255,255,0.75)",
     alignItems: "center",
     borderStyle: "dashed",
   },
-  mapBtnError: { borderColor: colors.error, backgroundColor: colors.errorLight },
+  mapBtnError: { borderColor: colors.error, backgroundColor: "rgba(255,255,255,0.6)" },
   mapBtnText: { color: colors.primary, fontWeight: typography.weight.semibold },
   mapError: {
     color: colors.error,
@@ -462,17 +467,15 @@ const styles = StyleSheet.create({
     marginLeft: spacing.xs,
     marginTop: 2,
   },
-
   loginLink: { alignItems: "center", paddingVertical: spacing.sm },
   loginText: { color: colors.textSecondary, fontSize: typography.size.bodySmall },
   loginHighlight: { color: colors.primary, fontWeight: typography.weight.semibold },
-
   modalContainer: {
     flex: 1,
     backgroundColor: colors.white,
     marginTop: 50,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    borderTopLeftRadius: radius["2xl"],
+    borderTopRightRadius: radius["2xl"],
     overflow: "hidden",
     ...shadows.xl,
   },
@@ -497,26 +500,39 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
   },
   modalCloseText: { color: colors.white, fontWeight: typography.weight.bold },
-
   successContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     padding: spacing["3xl"],
     gap: spacing.md,
-    backgroundColor: colors.background,
+    backgroundColor: 'transparent',
   },
   successIcon: { fontSize: 64 },
   successTitle: {
     fontSize: typography.size.h2,
-    fontWeight: typography.weight.bold,
-    color: colors.textPrimary,
+    fontWeight: "800",
+    color: colors.white,
+    letterSpacing: -0.3,
   },
   successText: {
     fontSize: typography.size.body,
-    color: colors.textSecondary,
+    color: colors.white,
     textAlign: "center",
-    lineHeight: 24,
+    lineHeight: 26,
   },
   successEmail: { color: colors.primary, fontWeight: typography.weight.semibold },
+  accentBar: {
+    height: 4,
+    width: 48,
+    backgroundColor: colors.primary,
+    borderRadius: radius.full,
+    marginBottom: spacing.md,
+  },
+  footer: {
+    textAlign: "center",
+    marginTop: spacing["2xl"],
+    fontSize: typography.size.caption,
+    color: colors.textTertiary,
+  },
 });

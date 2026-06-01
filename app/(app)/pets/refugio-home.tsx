@@ -12,6 +12,8 @@ import {
   View,
 } from "react-native";
 import { useCallback } from "react";
+import LottieView from "lottie-react-native";
+import { PawPrint, Pencil, Trash2 } from "lucide-react-native";
 import Animated, { FadeInUp } from "react-native-reanimated";
 import {
   colors,
@@ -61,13 +63,7 @@ export default function RefugioHomeScreen() {
               <Image source={{ uri: item.photoUrl }} style={styles.photo} />
             ) : (
               <View style={styles.photoPlaceholder}>
-                <Text style={styles.photoEmoji}>
-                  {item.species === "perro"
-                    ? "🐶"
-                    : item.species === "gato"
-                    ? "🐱"
-                    : "🐾"}
-                </Text>
+                <PawPrint size={40} color={colors.primary} />
               </View>
             )}
 
@@ -94,14 +90,14 @@ export default function RefugioHomeScreen() {
                 style={styles.btnEdit}
                 onPress={() => router.push(`/(app)/pets/edit/${item.id}`)}
               >
-                <Text style={styles.btnEditText}>✏️</Text>
+                <Pencil size={18} color={colors.warning} />
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.btnDelete}
                 onPress={() => handleDelete(item)}
                 disabled={isDeleting}
               >
-                <Text style={styles.btnDeleteText}>🗑️</Text>
+                <Trash2 size={18} color={colors.error} />
               </TouchableOpacity>
             </View>
           </View>
@@ -114,6 +110,7 @@ export default function RefugioHomeScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
+        <View style={styles.headerAccent} />
         <Text style={styles.headerTitle}>Mis Mascotas</Text>
         <Text style={styles.headerSubtitle}>
           Gestiona tus mascotas en adopción
@@ -127,12 +124,17 @@ export default function RefugioHomeScreen() {
         contentContainerStyle={
           pets.length === 0
             ? { flex: 1 }
-            : { paddingBottom: 100, paddingHorizontal: spacing.lg }
+            : { paddingBottom: 120, paddingHorizontal: spacing.lg }
         }
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <View style={styles.centered}>
-            <Text style={styles.emptyIcon}>🏥</Text>
+            <LottieView
+              source={require("../../../assets/animations/empty-pets.json")}
+              autoPlay
+              loop
+              style={{ width: 200, height: 200 }}
+            />
             <Text style={styles.emptyTitle}>
               No tienes mascotas registradas
             </Text>
@@ -160,45 +162,51 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: spacing.sm,
   },
-
   header: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing["2xl"],
     paddingBottom: spacing.md,
   },
+  headerAccent: {
+    width: 36,
+    height: 4,
+    backgroundColor: colors.primary,
+    borderRadius: radius.full,
+    marginBottom: spacing.sm,
+  },
   headerTitle: {
-    fontFamily: typography.fontFamily.serif,
     fontSize: typography.size.h2,
-    fontWeight: typography.weight.bold,
+    fontWeight: typography.weight.extrabold,
     color: colors.textPrimary,
+    letterSpacing: typography.letterSpacing.tight,
   },
   headerSubtitle: {
-    fontFamily: typography.fontFamily.body,
     fontSize: typography.size.bodySmall,
     color: colors.textSecondary,
     marginTop: spacing.xs,
   },
-
   card: {
     marginHorizontal: spacing.lg,
     marginBottom: spacing.md,
+    backgroundColor: colors.background,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
   },
   cardInner: {
     flexDirection: "row",
     alignItems: "center",
-    padding: spacing.md,
-    gap: spacing.md,
+    padding: spacing.lg,
+    gap: spacing.lg,
   },
-  photo: { width: 72, height: 72, borderRadius: radius.md },
+  photo: { width: 90, height: 90, borderRadius: radius.xl },
   photoPlaceholder: {
-    width: 72,
-    height: 72,
-    borderRadius: radius.md,
-    backgroundColor: colors.warningLight,
-    justifyContent: "center",
-    alignItems: "center",
+    width: 90, height: 90,
+    borderRadius: radius.xl,
+    backgroundColor: colors.primaryLight,
+    justifyContent: "center", alignItems: "center",
   },
-  photoEmoji: { fontSize: 32 },
+  photoEmoji: { fontSize: 40 },
   info: { flex: 1, gap: spacing.xs },
   name: {
     fontSize: typography.size.h4,
@@ -206,7 +214,6 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
   },
   detail: { fontSize: 13, color: colors.textSecondary },
-
   statusBadge: {
     alignSelf: "flex-start",
     paddingHorizontal: spacing.sm,
@@ -221,21 +228,19 @@ const styles = StyleSheet.create({
   status_disponible: { backgroundColor: colors.success },
   status_en_proceso: { backgroundColor: colors.warning },
   status_adoptado: { backgroundColor: colors.gray400 },
-
   actions: { gap: spacing.sm },
   btnEdit: {
     padding: spacing.sm,
     backgroundColor: colors.warningLight,
-    borderRadius: radius.md,
+    borderRadius: radius.full,
   },
   btnEditText: { fontSize: 18 },
   btnDelete: {
     padding: spacing.sm,
     backgroundColor: colors.errorLight,
-    borderRadius: radius.md,
+    borderRadius: radius.full,
   },
   btnDeleteText: { fontSize: 18 },
-
   emptyIcon: { fontSize: 48, marginBottom: spacing.sm },
   emptyTitle: {
     fontSize: typography.size.h4,
@@ -246,18 +251,15 @@ const styles = StyleSheet.create({
     fontSize: typography.size.bodySmall,
     color: colors.textTertiary,
   },
-
   fab: {
     position: "absolute",
-    right: 20,
-    bottom: 24,
+    right: 20, bottom: 100,
     backgroundColor: colors.primary,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 66, height: 66,
+    borderRadius: radius.full,
     justifyContent: "center",
     alignItems: "center",
     ...shadows.primary,
   },
-  fabText: { color: colors.white, fontSize: 30, lineHeight: 34 },
+  fabText: { color: colors.white, fontSize: 34, lineHeight: 38 },
 });

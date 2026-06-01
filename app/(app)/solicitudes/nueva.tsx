@@ -1,11 +1,14 @@
 import { useSolicitudes } from '@features/solicitudes/presentation/hooks/useSolicitudes';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useState, useCallback } from 'react';
 import {
-  ActivityIndicator, ScrollView, StyleSheet,
-  Text, TextInput, TouchableOpacity, View,
+  ActivityIndicator, KeyboardAvoidingView, Platform,
+  ScrollView, StyleSheet, Text, TextInput,
+  TouchableOpacity, View,
 } from 'react-native';
 import LottieView from 'lottie-react-native';
+import { PawPrint } from 'lucide-react-native';
+import { colors, spacing, typography, shadows, radius } from "@shared/presentation/styles/theme";
 
 export default function NuevaSolicitudScreen() {
   const { petId, refugioId } = useLocalSearchParams<{ petId: string; refugioId: string }>();
@@ -13,6 +16,23 @@ export default function NuevaSolicitudScreen() {
   const router = useRouter();
   const [message, setMessage] = useState('');
   const [sent, setSent] = useState(false);
+  const [focusedField, setFocusedField] = useState<string | null>(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      setMessage('');
+      setSent(false);
+      setFocusedField(null);
+    }, [])
+  );
+
+  if (!petId || !refugioId) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <Text style={{ color: colors.textSecondary }}>Parametros invalidos</Text>
+      </View>
+    );
+  }
 
   if (sent) {
     return (
@@ -35,7 +55,16 @@ export default function NuevaSolicitudScreen() {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 80}
+    >
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      keyboardShouldPersistTaps="handled"
+    >
       <Text style={styles.title}>Solicitud de Adopción</Text>
       <Text style={styles.subtitle}>
         Cuéntale al refugio por qué serías un buen hogar para esta mascota.
@@ -43,7 +72,7 @@ export default function NuevaSolicitudScreen() {
 
       <Text style={styles.label}>TU MENSAJE (opcional)</Text>
       <TextInput
-        style={styles.textarea}
+        style={[styles.textarea, focusedField === "message" && styles.inputFocused]}
         placeholder="Ej: Tengo un jardín grande, experiencia con mascotas, vivo solo..."
         placeholderTextColor="#a8a29e"
         value={message}
@@ -51,6 +80,8 @@ export default function NuevaSolicitudScreen() {
         multiline
         numberOfLines={6}
         maxLength={500}
+        onFocus={() => setFocusedField("message")}
+        onBlur={() => setFocusedField(null)}
       />
       <Text style={styles.charCount}>{message.length}/500</Text>
 
@@ -67,31 +98,86 @@ export default function NuevaSolicitudScreen() {
       >
         {isCreating
           ? <ActivityIndicator color="#fff" />
-          : <Text style={styles.btnPrimaryText}>Enviar Solicitud 🐾</Text>
+          : <Text style={styles.btnPrimaryText}>Enviar Solicitud</Text>
         }
       </TouchableOpacity>
     </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fef7f0' },
-  content: { padding: 24, gap: 14 },
-  successContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32, gap: 16, backgroundColor: '#fef7f0' },
-  successIcon: { fontSize: 64 },
-  successTitle: { fontSize: 26, fontWeight: '700', color: '#1c1917' },
-  successText: { fontSize: 15, color: '#78716c', textAlign: 'center', lineHeight: 24 },
-  title: { fontSize: 26, fontWeight: '700', color: '#1c1917' },
-  subtitle: { fontSize: 14, color: '#78716c', lineHeight: 22 },
-  label: { fontSize: 10, fontWeight: '700', color: '#78716c', letterSpacing: 2 },
-  textarea: {
-    borderWidth: 1.5, borderColor: '#e7e5e4', borderRadius: 16,
-    paddingHorizontal: 16, paddingVertical: 14,
-    fontSize: 15, color: '#1c1917', backgroundColor: '#fff',
-    height: 140, textAlignVertical: 'top',
+  container: { flex: 1, backgroundColor: colors.background },
+  content: { padding: spacing["2xl"], gap: spacing.lg, paddingBottom: 120 },
+  successContainer: {
+    flex: 1, justifyContent: "center",
+    alignItems: "center",
+    padding: spacing["3xl"], gap: spacing.md,
+    backgroundColor: colors.background,
   },
-  charCount: { fontSize: 12, color: '#a8a29e', textAlign: 'right', marginTop: -8 },
-  btnPrimary: { backgroundColor: '#f97316', borderRadius: 100, paddingVertical: 16, alignItems: 'center', marginTop: 8 },
-  btnDisabled: { opacity: 0.6 },
-  btnPrimaryText: { color: '#fff', fontWeight: '700', fontSize: 16 },
+  successTitle: {
+    fontSize: typography.size.h2,
+    fontWeight: typography.weight.extrabold,
+    color: colors.textPrimary,
+    letterSpacing: typography.letterSpacing.tight,
+  },
+  successText: {
+    fontSize: typography.size.body,
+    color: colors.textSecondary,
+    textAlign: "center", lineHeight: 24,
+  },
+  title: {
+    fontSize: typography.size.h2,
+    fontWeight: typography.weight.extrabold,
+    color: colors.textPrimary,
+    letterSpacing: typography.letterSpacing.tight,
+  },
+  subtitle: {
+    fontSize: typography.size.bodySmall,
+    color: colors.textSecondary, lineHeight: 22,
+  },
+  label: {
+    fontSize: typography.size.overline,
+    fontWeight: typography.weight.bold,
+    color: colors.textSecondary, letterSpacing: 2,
+  },
+  textarea: {
+    borderWidth: 0.5,
+    borderColor: colors.border,
+    borderRadius: 30,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    fontSize: typography.size.body,
+    color: colors.textPrimary,
+    backgroundColor: colors.background,
+    height: 150, textAlignVertical: "top",
+  },
+  charCount: {
+    fontSize: typography.size.caption,
+    color: colors.textTertiary,
+    textAlign: "right", marginTop: -8,
+  },
+  btnPrimary: {
+    backgroundColor: colors.primary,
+    borderRadius: radius.full,
+    paddingVertical: 17,
+    alignItems: "center",
+    marginTop: spacing.sm,
+    ...shadows.primary,
+  },
+  btnDisabled: { opacity: 0.55 },
+  btnPrimaryText: {
+    color: colors.white,
+    fontWeight: typography.weight.bold, fontSize: 16,
+    letterSpacing: 0.3,
+  },
+  inputFocused: {
+    borderColor: colors.primary,
+    backgroundColor: "rgba(255,240,237,0.50)",
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    // elevation: 2,
+  },
 });

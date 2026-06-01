@@ -1,7 +1,9 @@
 import { useAuthStore } from '@features/auth/presentation/store/authStore';
 import { CreateSolicitudUseCase } from '@features/solicitudes/application/use-cases/CreateSolicitudUseCase';
 import { GetSolicitudesAdoptanteUseCase, GetSolicitudesRefugioUseCase } from '@features/solicitudes/application/use-cases/GetSolicitudesUseCase';
+import { GetSolicitudByPetUseCase } from '@features/solicitudes/application/use-cases/GetSolicitudByPetUseCase';
 import { UpdateSolicitudStatusUseCase } from '@features/solicitudes/application/use-cases/UpdateSolicitudStatusUseCase';
+import { DeleteSolicitudUseCase } from '@features/solicitudes/application/use-cases/DeleteSolicitudUseCase';
 import { SolicitudStatus } from '@features/solicitudes/domain/entities/Solicitud';
 import { SupabaseSolicitudRepository } from '@features/solicitudes/infrastructure/repositories/SupabaseSolicitudRepository';
 import { showMessageNotification } from '@shared/infrastructure/notifications/NotificationService';
@@ -11,7 +13,9 @@ const repo             = new SupabaseSolicitudRepository();
 const createUseCase    = new CreateSolicitudUseCase(repo);
 const getAdoptanteCase = new GetSolicitudesAdoptanteUseCase(repo);
 const getRefugioCase   = new GetSolicitudesRefugioUseCase(repo);
+const getByPetCase     = new GetSolicitudByPetUseCase(repo);
 const updateStatusCase = new UpdateSolicitudStatusUseCase(repo);
+const deleteUseCase    = new DeleteSolicitudUseCase(repo);
 
 export function useSolicitudes() {
   const user        = useAuthStore((s) => s.user);
@@ -30,9 +34,7 @@ export function useSolicitudes() {
     mutationFn: (data: { mascotaId: string; refugioId: string; message?: string }) =>
       createUseCase.execute({ ...data, adoptanteId: user!.id }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['solicitudes'] });
-
-      // Notificación local al adoptante confirmando que su solicitud fue enviada
+      queryClient.invalidateQueries({ queryKey: ['solicitudes', user?.id] });
       showMessageNotification(
         '🐾 Solicitud enviada',
         'PetAdopt',
@@ -45,9 +47,11 @@ export function useSolicitudes() {
     mutationFn: ({ id, status }: { id: string; status: SolicitudStatus }) =>
       updateStatusCase.execute(id, status),
     onSuccess: (solicitud) => {
-      queryClient.invalidateQueries({ queryKey: ['solicitudes'] });
+      queryClient.invalidateQueries({ queryKey: ['solicitudes', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['pets'] });
+      queryClient.invalidateQueries({ queryKey: ['pets', 'refugio', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['rooms'] });
 
-      // Notificación local al refugio confirmando que actualizó el estado
       if (solicitud.status === 'aprobada') {
         showMessageNotification(
           '✅ Solicitud aprobada',
@@ -64,6 +68,16 @@ export function useSolicitudes() {
     },
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => deleteUseCase.execute(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['solicitudes', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['pets'] });
+      queryClient.invalidateQueries({ queryKey: ['pets', 'refugio', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['rooms'] });
+    },
+  });
+
   return {
     solicitudes,
     isLoading,
@@ -71,5 +85,7 @@ export function useSolicitudes() {
     isCreating:       createMutation.isPending,
     updateStatus:     updateStatusMutation.mutate,
     isUpdating:       updateStatusMutation.isPending,
+    deleteSolicitud:  deleteMutation.mutate,
+    isDeleting:       deleteMutation.isPending,
   };
 }

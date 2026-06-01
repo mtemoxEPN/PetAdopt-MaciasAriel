@@ -75,10 +75,32 @@ export class SupabasePetRepository implements IPetRepository {
   }
 
   async delete(id: string): Promise<void> {
-    const { error } = await supabase
-      .from('mascotas')
-      .delete()
-      .eq('id', id);
+    // 1. Buscar solicitudes relacionadas
+    const { data: solicitudes } = await supabase
+      .from('solicitudes')
+      .select('id')
+      .eq('mascota_id', id);
+
+    // 2. Por cada solicitud, eliminar room y mensajes asociados
+    for (const sol of solicitudes ?? []) {
+      const roomName = `solicitud-${sol.id}`;
+      const { data: room } = await supabase
+        .from('rooms')
+        .select('id')
+        .eq('name', roomName)
+        .single();
+
+      if (room) {
+        await supabase.from('messages').delete().eq('room_id', room.id);
+        await supabase.from('rooms').delete().eq('id', room.id);
+      }
+    }
+
+    // 3. Eliminar solicitudes
+    await supabase.from('solicitudes').delete().eq('mascota_id', id);
+
+    // 4. Eliminar mascota
+    const { error } = await supabase.from('mascotas').delete().eq('id', id);
     if (error) throw error;
   }
 
